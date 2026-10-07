@@ -1,0 +1,60 @@
+id: nginx
+name: Nginx
+version: "1.30"
+summary:
+  en: High-performance web server, reverse proxy and load balancer.
+  zh: 高性能 Web 服务器、反向代理与负载均衡器。
+description:
+  en: |-
+    Serves the html/ folder of the app and any server blocks you add. Docker
+    deployments read conf.d/*.conf; process deployments read conf/sites/*.conf.
+    On Linux and macOS the process deployment uses nginx from the system package
+    manager; on Windows it downloads the official build from nginx.org.
+  zh: |-
+    提供应用目录中 html/ 文件夹的内容，并加载你添加的 server 配置。Docker 部署读取
+    conf.d/*.conf；进程守护部署读取 conf/sites/*.conf。在 Linux 和 macOS 上，进程守护
+    部署使用系统包管理器提供的 nginx；在 Windows 上从 nginx.org 下载官方版本。
+icon: icon.svg
+categories: [web, proxy]
+homepage: https://nginx.org
+license: BSD-2-Clause
+
+settings:
+  - key: PORT
+    type: port
+    default: 8080
+    label: { en: Port, zh: 端口 }
+  - key: BIND
+    type: select
+    default: 0.0.0.0
+    label: { en: Listen address, zh: 监听地址 }
+    options:
+      - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }
+      - { value: 127.0.0.1, label: { en: This machine only, zh: 仅本机 } }
+
+docker:
+  compose: docker/compose.yaml
+  files:
+    - { source: shared/index.html, target: html/index.html }
+    - { source: docker/default.conf, target: conf.d/default.conf }
+
+process:
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh]
+  windows:
+    install: process/install.ps1
+    configure: process/configure.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1]
+  files:
+    - { source: shared/index.html, target: html/index.html }
+    - { source: process/mime.types, target: conf/mime.types }
+  health_check:
+    type: tcp
+    host: ${BIND}
+    port: ${PORT}

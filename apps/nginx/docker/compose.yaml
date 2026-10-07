@@ -1,0 +1,9 @@
+services:
+  nginx:
+    image: nginx:1.30-alpine
+    restart: unless-stopped
+    ports:
+      - ${BIND:-0.0.0.0}:${PORT:-8080}:80
+    volumes:
+      - ./html:/usr/share/nginx/html:ro
+      - ./conf.d:/etc/nginx/conf.d:ro

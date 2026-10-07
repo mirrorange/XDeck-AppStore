@@ -91,9 +91,10 @@ describe.each(repo.apps.map((a) => [a.manifest.id, a] as const))("%s", (id, { di
   it.skipIf(!pwsh)("has PowerShell scripts that parse", () => {
     for (const rel of referencedFiles(manifest).filter((f) => f.endsWith(".ps1"))) {
       const cmd =
-        "$e=$null; [System.Management.Automation.Language.Parser]::ParseFile($args[0],[ref]$null,[ref]$e) | Out-Null; if ($e) { $e | % { $_.ToString() }; exit 1 }";
-      const r = spawnSync(pwsh!, ["-NoProfile", "-Command", cmd, join(dir, rel)], {
+        "$e=$null; [System.Management.Automation.Language.Parser]::ParseFile($env:PS_FILE,[ref]$null,[ref]$e) | Out-Null; if ($e) { $e | % { $_.ToString() }; exit 1 }";
+      const r = spawnSync(pwsh!, ["-NoProfile", "-Command", cmd], {
         encoding: "utf8",
+        env: { ...process.env, PS_FILE: join(dir, rel) },
       });
       expect(r.status, `${rel}: ${r.stdout}${r.stderr}`).toBe(0);
     }
