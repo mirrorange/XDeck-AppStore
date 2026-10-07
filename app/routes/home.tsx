@@ -33,8 +33,6 @@ export default function Home() {
     .filter((a) => !category || a.categories.includes(category))
     .filter((a) => matchesApp(a, query, i18n.language))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const description =
-    catalog.status === "ready" ? pick(catalog.index.description, i18n.language) : "";
 
   const setCategory = (c: string | null) =>
     setSearch(
@@ -51,7 +49,7 @@ export default function Home() {
       <section className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
         <div className="flex max-w-xl flex-col gap-2">
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{t("site.title")}</h1>
-          <p className="text-muted-foreground">{description || t("site.tagline")}</p>
+          <p className="text-muted-foreground">{t("site.tagline")}</p>
         </div>
         <div className="flex w-full flex-col gap-1.5 md:w-80">
           <span className="text-xs font-medium text-muted-foreground">{t("repo.add")}</span>

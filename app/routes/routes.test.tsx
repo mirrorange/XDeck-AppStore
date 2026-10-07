@@ -71,7 +71,7 @@ describe("catalog page", () => {
     expect(await screen.findByText("Redis")).toBeInTheDocument();
     expect(screen.getByText("Nginx")).toBeInTheDocument();
     expect(screen.getByText("2 apps")).toBeInTheDocument();
-    expect(screen.getByText("Official XDeck App Store")).toBeInTheDocument();
+    expect(screen.getByText(/Apps you can deploy with XDeck/)).toBeInTheDocument();
     expect(screen.getByLabelText("Repository URL")).toHaveValue(window.location.origin);
   });
 

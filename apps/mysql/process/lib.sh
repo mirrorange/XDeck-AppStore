@@ -242,10 +242,11 @@ wait_for_port() {
 
 # Address for local clients of a server bound to BIND.
 client_host() {
-  case "${1:-127.0.0.1}" in
-    0.0.0.0 | "") echo 127.0.0.1 ;;
+  local bind="${1:-127.0.0.1}"
+  case "$bind" in
+    0.0.0.0) echo 127.0.0.1 ;;
     ::) echo ::1 ;;
-    *) echo "$1" ;;
+    *) echo "$bind" ;;
   esac
 }
 

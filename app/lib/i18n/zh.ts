@@ -49,7 +49,7 @@ const zh: Translation = {
     settings: "配置项",
     noSettings: "无配置项",
     files: "文件",
-    setting: "配置项",
+    setting: "名称",
     default: "默认值",
     generated: "自动生成",
     required: "必填",

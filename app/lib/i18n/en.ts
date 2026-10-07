@@ -47,7 +47,7 @@ const en = {
     settings: "Settings",
     noSettings: "No settings",
     files: "Files",
-    setting: "Setting",
+    setting: "Name",
     default: "Default",
     generated: "Generated",
     required: "Required",
