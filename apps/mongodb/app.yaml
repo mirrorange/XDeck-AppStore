@@ -1,0 +1,66 @@
+id: mongodb
+name: MongoDB
+version: "8.0"
+summary:
+  en: Document database with flexible schemas and rich queries.
+  zh: 灵活模式、查询能力丰富的文档数据库。
+description:
+  en: |-
+    MongoDB Community Server with access control enabled; the root user is created
+    on first start. The process deployment downloads the official build and mongosh
+    for your system into the app directory (Ubuntu, Debian 12, RHEL-compatible,
+    Amazon Linux, SUSE, macOS and Windows).
+  zh: |-
+    启用访问控制的 MongoDB 社区版，首次启动时创建 root 用户。进程守护部署会将适用于当前
+    系统的官方版本及 mongosh 下载到应用目录（支持 Ubuntu、Debian 12、RHEL 系、
+    Amazon Linux、SUSE、macOS 与 Windows）。
+icon: icon.svg
+categories: [database, nosql]
+homepage: https://www.mongodb.com
+license: SSPL-1.0
+
+settings:
+  - key: PORT
+    type: port
+    default: 27017
+    label: { en: Port, zh: 端口 }
+  - key: BIND
+    type: select
+    default: 127.0.0.1
+    label: { en: Listen address, zh: 监听地址 }
+    options:
+      - { value: 127.0.0.1, label: { en: This machine only, zh: 仅本机 } }
+      - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }
+  - key: MONGO_USERNAME
+    type: string
+    default: root
+    required: true
+    install_only: true
+    label: { en: Root user, zh: root 用户 }
+  - key: MONGO_PASSWORD
+    type: password
+    required: true
+    generate: true
+    install_only: true
+    label: { en: Root password, zh: root 密码 }
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/mongodb.sh, process/checksums.txt]
+  windows:
+    install: process/install.ps1
+    configure: process/configure.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1, process/mongodb.ps1, process/checksums.txt]
+  health_check:
+    type: tcp
+    host: ${BIND}
+    port: ${PORT}
