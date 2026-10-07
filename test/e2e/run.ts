@@ -201,6 +201,18 @@ async function main() {
   });
   await retry(`${appId} answers on ${moved}`, 180, () => verify(moved, app.config));
 
+  // Uninstalling without deleting data, then installing again with the same
+  // settings, must bring the existing data back.
+  console.log("uninstalling, keeping data");
+  await x.call("appstore.uninstall", { name, delete_data: false, stream: "e2e" });
+  await retry(`port ${moved} closed`, 30, async () => {
+    if (await portOpen(moved)) throw new Error("still open");
+  });
+  console.log("installing again over the kept data");
+  const config = { ...app.config, PORT: String(moved) };
+  await x.call("appstore.install", { repo, app: appId, method, name, config, stream: "e2e" });
+  await retry(`${appId} answers on ${moved} with the kept data`, 180, () => verify(moved, config));
+
   console.log("uninstalling");
   await x.call("appstore.uninstall", { name, delete_data: true, stream: "e2e" });
   const after = await x.call<{ apps: Installed[] }>("appstore.installed.list");
