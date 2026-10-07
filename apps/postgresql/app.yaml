@@ -1,0 +1,67 @@
+id: postgresql
+name: PostgreSQL
+version: "17"
+summary:
+  en: Advanced open-source relational database.
+  zh: 功能强大的开源关系型数据库。
+description:
+  en: |-
+    PostgreSQL with password (SCRAM-SHA-256) authentication. The user, password and
+    database are created on first start. The process deployment uses PostgreSQL from
+    the system package manager (Homebrew on macOS) and keeps its data in the app
+    directory; under root it runs as the postgres system user.
+  zh: |-
+    使用密码（SCRAM-SHA-256）认证的 PostgreSQL。用户、密码和数据库在首次启动时创建。
+    进程守护部署使用系统包管理器（macOS 上为 Homebrew）提供的 PostgreSQL，数据保存在
+    应用目录中；以 root 运行时将使用 postgres 系统用户启动。
+icon: icon.svg
+categories: [database, sql]
+homepage: https://www.postgresql.org
+license: PostgreSQL
+
+settings:
+  - key: PORT
+    type: port
+    default: 5432
+    label: { en: Port, zh: 端口 }
+  - key: BIND
+    type: select
+    default: 127.0.0.1
+    label: { en: Listen address, zh: 监听地址 }
+    options:
+      - { value: 127.0.0.1, label: { en: This machine only, zh: 仅本机 } }
+      - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }
+  - key: POSTGRES_USER
+    type: string
+    default: postgres
+    required: true
+    install_only: true
+    label: { en: Superuser, zh: 超级用户 }
+  - key: POSTGRES_PASSWORD
+    type: password
+    required: true
+    generate: true
+    install_only: true
+    label: { en: Password, zh: 密码 }
+  - key: POSTGRES_DB
+    type: string
+    default: postgres
+    required: true
+    install_only: true
+    label: { en: Database, zh: 数据库 }
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  platforms: [linux, macos]
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/postgres.sh]
+  health_check:
+    type: tcp
+    host: ${BIND}
+    port: ${PORT}
