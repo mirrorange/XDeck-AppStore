@@ -1,0 +1,13 @@
+# Cloudflare Pages headers. XDeck daemons fetch index.json and app files;
+# browsers may read them from other origins too.
+/index.json
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300, must-revalidate
+
+/apps/*
+  Access-Control-Allow-Origin: *
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Content-Type-Options: nosniff
+
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
