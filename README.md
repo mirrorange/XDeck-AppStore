@@ -56,7 +56,8 @@ XDECK_URL=http://127.0.0.1:9210 XDECK_TOKEN=xdk_... \
 
 ## Deployment (Cloudflare Pages)
 
-Build command `pnpm build`, output directory `build/client`. There is no `404.html`, so
+Build command `pnpm build`, output directory `build/client` (Node from `.node-version`, pnpm from
+`packageManager`). There is no `404.html`, so
 Pages serves `index.html` for app pages; `public/_headers` allows cross-origin reads of
 `index.json` and app files.
 
