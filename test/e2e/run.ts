@@ -5,6 +5,8 @@
 //   XDECK_URL=http://127.0.0.1:9210 XDECK_TOKEN=xdk_... \
 //     tsx test/e2e/run.ts <app> <docker|process> [repo]
 //
+// E2E_CONFIG='{"KEY":"value"}' overrides settings besides the port.
+//
 // Client checks run official images with host networking, so Docker is
 // needed for every app except nginx.
 
@@ -31,6 +33,7 @@ if (!appId || (method !== "docker" && method !== "process")) {
 const url = process.env.XDECK_URL ?? "http://127.0.0.1:9210";
 const token = process.env.XDECK_TOKEN ?? "";
 const name = `e2e-${appId}-${method}`;
+const extra = JSON.parse(process.env.E2E_CONFIG ?? "{}") as Config;
 
 function freePort(): Promise<number> {
   return new Promise((resolve) => {
@@ -178,7 +181,7 @@ async function main() {
       app: appId,
       method,
       name,
-      config: { PORT: String(port) },
+      config: { ...extra, PORT: String(port) },
       stream: "e2e",
     });
   } catch (e) {
