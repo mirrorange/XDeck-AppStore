@@ -1,0 +1,8 @@
+node_modules/
+build/
+.react-router/
+# Generated from apps/ by scripts/build-index.ts
+public/index.json
+public/apps/
+.DS_Store
+*.log

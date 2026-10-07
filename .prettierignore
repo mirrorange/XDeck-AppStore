@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+build
+.react-router
+public/index.json
+public/apps
+app/components/ui
