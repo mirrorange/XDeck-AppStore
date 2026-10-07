@@ -1,0 +1,59 @@
+id: redis
+name: Redis
+version: "8.2"
+summary:
+  en: In-memory data store for caching, queues and real-time workloads.
+  zh: 内存数据存储，适用于缓存、队列与实时场景。
+description:
+  en: |-
+    Redis keeps data in memory with optional persistence. This deployment enables
+    append-only persistence and requires a password for every connection.
+    The process deployment uses Redis (or Valkey) from the system package manager.
+  zh: |-
+    Redis 将数据保存在内存中，并可持久化到磁盘。此部署启用 AOF 持久化，
+    所有连接均需密码。进程守护部署使用系统包管理器提供的 Redis（或 Valkey）。
+icon: icon.svg
+categories: [database, cache, nosql]
+homepage: https://redis.io
+license: AGPL-3.0 / RSALv2 / SSPLv1
+
+settings:
+  - key: PORT
+    type: port
+    default: 6379
+    label: { en: Port, zh: 端口 }
+  - key: BIND
+    type: select
+    default: 127.0.0.1
+    label: { en: Listen address, zh: 监听地址 }
+    options:
+      - { value: 127.0.0.1, label: { en: This machine only, zh: 仅本机 } }
+      - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }
+  - key: REDIS_PASSWORD
+    type: password
+    required: true
+    generate: true
+    label: { en: Password, zh: 密码 }
+  - key: REDIS_MAXMEMORY
+    type: string
+    default: ""
+    label: { en: Memory limit, zh: 内存上限 }
+    description:
+      en: For example 256mb or 2gb. Empty for no limit.
+      zh: 例如 256mb 或 2gb，留空表示不限制。
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  platforms: [linux, macos]
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh]
+  health_check:
+    type: tcp
+    host: ${BIND}
+    port: ${PORT}
