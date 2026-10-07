@@ -1,0 +1,81 @@
+id: mysql
+name: MySQL
+version: "8.4"
+summary:
+  en: The popular open-source relational database (LTS release).
+  zh: 流行的开源关系型数据库（LTS 版本）。
+description:
+  en: |-
+    MySQL 8.4 LTS. The root password, and optionally a database with its own user,
+    are set up on first start. The process deployment downloads the official build
+    from dev.mysql.com into the app directory (Linux with glibc 2.28+, macOS 15+,
+    Windows x64).
+  zh: |-
+    MySQL 8.4 LTS。首次启动时设置 root 密码，并可选创建数据库及其专属用户。进程守护部署
+    从 dev.mysql.com 下载官方版本到应用目录（支持 glibc 2.28+ 的 Linux、macOS 15+、
+    Windows x64）。
+icon: icon.svg
+categories: [database, sql]
+homepage: https://www.mysql.com
+license: GPL-2.0
+
+settings:
+  - key: PORT
+    type: port
+    default: 3306
+    label: { en: Port, zh: 端口 }
+  - key: BIND
+    type: select
+    default: 127.0.0.1
+    label: { en: Listen address, zh: 监听地址 }
+    options:
+      - { value: 127.0.0.1, label: { en: This machine only, zh: 仅本机 } }
+      - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }
+  - key: MYSQL_ROOT_PASSWORD
+    type: password
+    required: true
+    generate: true
+    install_only: true
+    label: { en: Root password, zh: root 密码 }
+  - key: MYSQL_DATABASE
+    type: string
+    default: ""
+    install_only: true
+    label: { en: Database, zh: 数据库 }
+    description:
+      en: Created on first start. Optional.
+      zh: 首次启动时创建，可留空。
+  - key: MYSQL_USER
+    type: string
+    default: ""
+    install_only: true
+    label: { en: User, zh: 用户 }
+    description:
+      en: A user with all privileges on the database above. Optional.
+      zh: 拥有上述数据库全部权限的用户，可留空。
+  - key: MYSQL_PASSWORD
+    type: password
+    generate: true
+    install_only: true
+    label: { en: User password, zh: 用户密码 }
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/mysql.sh]
+  windows:
+    install: process/install.ps1
+    configure: process/configure.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1, process/mysql.ps1]
+  health_check:
+    type: tcp
+    host: ${BIND}
+    port: ${PORT}
