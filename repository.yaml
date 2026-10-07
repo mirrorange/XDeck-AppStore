@@ -1,0 +1,6 @@
+# XDeck App Store repository (format 1). See docs/format.md.
+format: 1
+name: XDeck
+description:
+  en: Official XDeck App Store
+  zh: XDeck 官方应用商店

@@ -50,6 +50,12 @@ state_load() {
   . "$STATE_FILE"
 }
 
+# Load the state when there is one (first install: nothing yet).
+state_try_load() {
+  # shellcheck disable=SC1090
+  if [ -f "$STATE_FILE" ]; then . "$STATE_FILE"; fi
+}
+
 # ---- files ------------------------------------------------------------------
 
 # Write stdin to a file atomically.
@@ -175,6 +181,19 @@ find_bin() {
     fi
   done
   return 1
+}
+
+# Shared libraries a binary needs but cannot find (Linux).
+missing_libs() {
+  ldd "$1" 2>/dev/null | awk '/not found/ {print $1}' | sort -u
+}
+
+# Escape a value for a single-quoted SQL string.
+sql_string() {
+  local v="$1"
+  v="${v//\\/\\\\}"
+  v="${v//\'/\\\'}"
+  printf "'%s'" "$v"
 }
 
 # ---- platform ---------------------------------------------------------------
