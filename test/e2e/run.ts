@@ -1,5 +1,6 @@
 // End-to-end check of an app against a running XDeck daemon: install with
-// default settings, verify the service, change its port, verify again and
+// default settings, verify the service, update it to the repository's
+// version, change its port, verify again, reinstall over the kept data and
 // uninstall with its data.
 //
 //   XDECK_URL=http://127.0.0.1:9210 XDECK_TOKEN=xdk_... \
@@ -191,6 +192,16 @@ async function main() {
   console.log(`installed in ${Math.round((Date.now() - started) / 1000)}s`);
   const app = await x.call<Installed>("appstore.get", { name });
   await retry(`${appId} answers on ${port}`, 180, () => verify(port, app.config));
+
+  // The repository offers the installed version: the update runs the update
+  // script (or install again) over the running installation.
+  console.log("updating to the repository's version");
+  try {
+    await x.call("appstore.update", { name, stream: "e2e" });
+  } catch (e) {
+    throw new Error(`update failed: ${(e as Error).message}\n${await lastLog(x)}`);
+  }
+  await retry(`${appId} answers on ${port} after the update`, 180, () => verify(port, app.config));
 
   const moved = await freePort();
   console.log(`moving to port ${moved}`);

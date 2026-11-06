@@ -45,7 +45,8 @@ its app directory. See [docs/authoring.md](docs/authoring.md) to add an app.
 ### End-to-end tests
 
 `test/e2e/run.ts` installs an app on a running XDeck daemon, checks it with the service's
-own client, moves it to another port, checks again and uninstalls it with its data:
+own client, updates it to the repository's version, moves it to another port, checks
+again, reinstalls over the kept data and uninstalls it with its data:
 
 ```sh
 pnpm build && pnpm preview                       # repository on :4173
