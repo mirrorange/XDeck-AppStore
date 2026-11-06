@@ -24,6 +24,20 @@ describe("parseManifest", () => {
       settings: [],
       docker: { compose: "compose.yaml", files: [] },
       process: null,
+      nginx: null,
+    });
+  });
+
+  it("reads the Nginx integration", () => {
+    const m = parseManifest({
+      ...minimal,
+      nginx: {},
+      process: { unix: { install: "i.sh", start: "s.sh", control: "c.sh" } },
+    });
+    expect(m.nginx).toEqual({ service: "nginx" });
+    expect(referencedFiles(m)).toContain("c.sh");
+    expect(parseManifest({ ...minimal, nginx: { service: "web" } }).nginx).toEqual({
+      service: "web",
     });
   });
 
@@ -78,6 +92,11 @@ describe("parseManifest", () => {
       },
       "need a port",
     ],
+    [
+      { ...minimal, nginx: {}, process: { unix: { install: "i.sh", start: "s.sh" } } },
+      "control script",
+    ],
+    [{ ...minimal, nginx: { service: "a b" } }, "invalid nginx service"],
   ])("rejects %#", (raw, message) => {
     expect(() => parseManifest(raw)).toThrow(ManifestError);
     expect(() => parseManifest(raw)).toThrow(message);

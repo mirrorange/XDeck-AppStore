@@ -53,6 +53,8 @@ export interface Scripts {
   /** Runs when an installation moves to this version; `install` runs again without one. */
   update: string | null;
   uninstall: string | null;
+  /** Actions integrations ask for (`XDECK_ACTION`; Nginx: test, reload, version). */
+  control: string | null;
   lib: string[];
 }
 
@@ -83,6 +85,8 @@ export interface Manifest {
     files: FileDef[];
     health_check: HealthCheck | null;
   } | null;
+  /** XDeck manages websites on installations of this app. */
+  nginx: { service: string } | null;
 }
 
 export interface RepoMeta {
@@ -255,6 +259,7 @@ function scripts(v: unknown, what: string): Scripts | null {
     configure: optionalString(v.configure, `${what}.configure`),
     update: optionalString(v.update, `${what}.update`),
     uninstall: optionalString(v.uninstall, `${what}.uninstall`),
+    control: optionalString(v.control, `${what}.control`),
     lib: list(v.lib, `${what}.lib`).map((p) => scalar(p, `${what}.lib`)),
   };
 }
@@ -283,7 +288,7 @@ export function referencedFiles(m: Manifest): string[] {
   if (m.process) {
     for (const s of [m.process.unix, m.process.windows]) {
       if (!s) continue;
-      const paths = [s.install, s.start, s.configure, s.update, s.uninstall, ...s.lib];
+      const paths = [s.install, s.start, s.configure, s.update, s.uninstall, s.control, ...s.lib];
       for (const p of paths) if (p) out.add(p);
     }
     for (const f of m.process.files) out.add(f.source);
@@ -296,6 +301,7 @@ export function parseManifest(raw: unknown): Manifest {
   if (!isObject(raw)) fail("expected a map");
   const docker = raw.docker;
   const process = raw.process;
+  const nginx = raw.nginx;
   const m: Manifest = {
     id: scalar(raw.id, "id"),
     name: scalar(raw.name, "name"),
@@ -330,6 +336,12 @@ export function parseManifest(raw: unknown): Manifest {
               health_check: health(process.health_check),
             }
           : fail("process: expected a map"),
+    nginx:
+      nginx === undefined || nginx === null
+        ? null
+        : isObject(nginx)
+          ? { service: optionalString(nginx.service, "nginx.service") ?? "nginx" }
+          : fail("nginx: expected a map"),
   };
   validate(m);
   return m;
@@ -379,6 +391,9 @@ export function validate(m: Manifest): void {
     }
   }
   for (const p of referencedFiles(m)) checkRelativePath(p);
+  if (m.nginx && !/^[A-Za-z0-9._-]+$/.test(m.nginx.service)) {
+    fail(`invalid nginx service ${JSON.stringify(m.nginx.service)}`);
+  }
   if (m.icon && !iconType(m.icon)) fail(`icon ${m.icon} must be .svg, .png or .webp`);
   if (m.docker) checkTargets(m.docker.files);
   if (m.process) {
@@ -388,6 +403,11 @@ export function validate(m: Manifest): void {
         fail(`no scripts for ${p}`);
     }
     if (supportedPlatforms(m.process).length === 0) fail("process deployment without scripts");
+    if (m.nginx) {
+      for (const s of [m.process.unix, m.process.windows]) {
+        if (s && !s.control) fail("nginx apps need a control script for every platform");
+      }
+    }
     const h = m.process.health_check;
     if (h?.type === "tcp" && !h.port) fail("tcp health checks need a port");
     if (h?.type === "http" && !h.url) fail("http health checks need a url");
