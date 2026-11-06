@@ -40,6 +40,7 @@ process:
     install: process/install.sh
     configure: process/configure.sh
     start: process/start.sh
+    update: process/update.sh # optional; install runs again on updates without one
     uninstall: process/uninstall.sh
     lib: [process/lib.sh] # copied with the scripts, never run directly
   windows: # PowerShell 5.1+
@@ -65,20 +66,26 @@ XDeck creates a Compose project named after the installation, writes the setting
   stays under XDeck's data directory and "delete data" removes it.
 - Pin a major (or minor) image tag.
 
+Updating an installed app replaces its Compose file with the new version's, adds new
+settings to `.env` (existing values stay), places new extra files, pulls the images and
+deploys again. Keep data mounts and their layout compatible across versions.
+
 ## Process deployment
 
 Scripts run with the app directory (`<data_dir>/apps/<name>/`) as working directory and:
 
 | Variable                         | Value                                               |
 | -------------------------------- | --------------------------------------------------- |
-| `XDECK_ACTION`                   | `install`, `configure` or `uninstall`               |
+| `XDECK_ACTION`                   | `install`, `configure`, `update` or `uninstall`     |
 | `XDECK_APP_DIR`                  | the app directory: binaries, configuration, data    |
 | `XDECK_APP_NAME`, `XDECK_APP_ID` | installation name and app id                        |
 | `XDECK_SCRIPTS_DIR`              | where the scripts were copied                       |
 | `XDECK_HOME`                     | XDeck's data directory                              |
 | `XDECK_PLATFORM`, `XDECK_ARCH`   | `linux` / `macos` / `windows`, `x86_64` / `aarch64` |
+| `XDECK_APP_VERSION`              | version of the manifest the scripts belong to       |
+| `XDECK_PREVIOUS_VERSION`         | update only: the version that was installed         |
 | `XDECK_DELETE_DATA`              | uninstall only: `1` when the user deletes data      |
-| settings                         | install, configure, uninstall (not start)           |
+| settings                         | install, configure, update, uninstall (not start)   |
 
 - **install** fetches the software and initializes data. It runs again on reinstall over
   existing data, so keep it idempotent and never overwrite data.
@@ -87,6 +94,12 @@ Scripts run with the app directory (`<data_dir>/apps/<name>/`) as working direct
 - **start** runs the server in the foreground with `exec` (the supervisor's stop signal must
   reach it) and logs to stdout/stderr. It sees no settings, so secrets stay out of the
   process environment: read what configure wrote.
+- **update** (optional) moves an installation to this version: new binaries, data
+  migrations. It runs with the process stopped, after the new scripts and extra files are
+  in place, and is followed by configure. Without one, **install** runs again (with
+  `XDECK_ACTION=update`), so install should notice a changed software version and fetch it
+  (the apps here record the installed version with `state_set`). A failing update leaves
+  the previous scripts and version installed and starts the process again.
 - **uninstall** runs after the process is removed; delete data only when
   `XDECK_DELETE_DATA=1`. Leave system packages installed.
 
@@ -94,5 +107,13 @@ Script output is shown live in XDeck and kept in the operation log. Helpers in
 `shared/lib.sh` (`log`, `die`, `as_root`, `pkg_install`, `download`, `verify_sha256`,
 `extract`, `state_set`/`state_load`, `disable_service`, ...) and `shared/lib.ps1` cover the
 common steps; edit them in `shared/` and run `pnpm sync-shared`.
+
+## Versions and updates
+
+XDeck offers an update when the repository's `version` is newer than the installed one
+(compared part by part: `1.10` > `1.9`, `1.0` > `1.0-rc1`). Bump `version` whenever an
+installed app should pick up a change: a new image tag or pinned download, script fixes,
+new settings. Settings an update adds are asked for (or take their defaults); values of
+existing settings stay.
 
 Pin a SHA-256 for every download. Write scripts for bash 3.2 (macOS) and PowerShell 5.1.

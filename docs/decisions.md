@@ -66,3 +66,15 @@ Credentials are `generate`d passwords and `install_only` where the server stores
 initialization (changing `.env` later would not change the account).
 **Consequences.** The XDeck form looks the same across apps; reinstalling over kept data
 needs the original credentials.
+
+## 008 · Updates through version-aware install scripts
+
+**Context.** XDeck updates process apps by running the new version's `update` script, or
+`install` again when there is none.
+**Decision.** The apps here ship no update scripts: install scripts record the software
+version they fetched (`state_set`) and fetch again when the pinned version changes;
+package-manager apps leave upgrades of system packages to the system. An app gets an
+`update` script when moving between its versions needs more than new binaries (e.g. a
+data migration between major versions).
+**Consequences.** Patch and minor releases are published by bumping the pinned download
+and `version`; reinstalls and updates share one tested path.

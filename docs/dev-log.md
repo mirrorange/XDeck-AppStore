@@ -1,5 +1,20 @@
 # Development log
 
+## 2026-11-06 · App updates
+
+**Goal.** Support XDeck's app updates (Compose file replaced for Docker apps, optional
+`update` script for process apps).
+
+**Done**
+
+- Manifest mirror: `update` scripts (checked, hashed in `index.json`, shown on app pages).
+- Docs: authoring guide on updates, `XDECK_PREVIOUS_VERSION`, version ordering; ADR 008.
+- `test/e2e/run.ts` updates the installed app to the repository's version and checks it
+  still answers.
+
+**Verification.** `pnpm check`; `test/e2e/run.ts nginx process` against a local daemon
+(Ubuntu 24.04, root) passes with the update step.
+
 ## 2026-10-07 · Official repository
 
 **Goal.** Create the official XDeck App Store repository with Nginx, PostgreSQL, MySQL,
