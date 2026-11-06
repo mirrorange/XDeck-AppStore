@@ -1,0 +1,12 @@
+# The default page, on the port from the app's settings. Generated when the
+# container starts; edit templates/default-server.conf.template instead.
+server {
+    listen ${NGINX_BIND}:${NGINX_PORT};
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}

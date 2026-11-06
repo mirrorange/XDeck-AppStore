@@ -17,4 +17,6 @@ if "$bin" -h 2>&1 | grep -q -- '-e filename'; then
 else
   state_set NGINX_ERROR_LOG_FLAG 0
 fi
-mkdir -p "$APP_DIR/conf/sites" "$APP_DIR/html" "$APP_DIR/temp" "$APP_DIR/run"
+for d in conf conf.d sites ssl www acme logs html temp run; do
+  mkdir -p "$APP_DIR/$d"
+done

@@ -2,8 +2,20 @@ services:
   nginx:
     image: nginx:1.30-alpine
     restart: unless-stopped
-    ports:
-      - ${BIND:-0.0.0.0}:${PORT:-8080}:80
+    # Sites listen on the host's ports and reach upstreams on 127.0.0.1.
+    network_mode: host
+    environment:
+      NGINX_BIND: ${BIND:-0.0.0.0}
+      NGINX_PORT: ${PORT:-8080}
+      # templates/*.template → /etc/nginx/* when the container starts.
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
     volumes:
-      - ./html:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./templates:/etc/nginx/templates:ro
       - ./conf.d:/etc/nginx/conf.d:ro
+      - ./sites:/etc/nginx/sites:ro
+      - ./ssl:/etc/nginx/ssl:ro
+      - ./acme:/etc/nginx/acme:ro
+      - ./html:/usr/share/nginx/html:ro
+      - ./www:/var/www:ro
+      - ./logs:/var/log/nginx

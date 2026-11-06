@@ -42,6 +42,7 @@ process:
     start: process/start.sh
     update: process/update.sh # optional; install runs again on updates without one
     uninstall: process/uninstall.sh
+    control: process/control.sh # optional; actions integrations ask for
     lib: [process/lib.sh] # copied with the scripts, never run directly
   windows: # PowerShell 5.1+
     install: process/install.ps1
@@ -107,6 +108,38 @@ Script output is shown live in XDeck and kept in the operation log. Helpers in
 `shared/lib.sh` (`log`, `die`, `as_root`, `pkg_install`, `download`, `verify_sha256`,
 `extract`, `state_set`/`state_load`, `disable_service`, ...) and `shared/lib.ps1` cover the
 common steps; edit them in `shared/` and run `pnpm sync-shared`.
+
+- **control** (optional) runs actions XDeck's integrations ask for, named by
+  `XDECK_ACTION`, with the process running or stopped and without settings. Nginx apps
+  implement `test` (check the configuration), `reload` and `version`. It must finish
+  quickly (one minute at most); a non-zero exit fails the action and its output is shown.
+
+## Nginx servers
+
+An app with an `nginx` section is an Nginx server XDeck manages websites on (Websites in
+XDeck). The installation directory has a fixed layout:
+
+| Path         | Owner | Contents                                                     |
+| ------------ | ----- | ------------------------------------------------------------ |
+| `nginx.conf` | user  | main configuration; includes `conf.d/*.conf`, `sites/*.conf` |
+| `conf.d/`    | user  | the user's own configuration                                 |
+| `sites/`     | XDeck | one `<site>.conf` per website (inside `http {}`)             |
+| `ssl/`       | XDeck | certificates of the websites                                 |
+| `www/`       | user  | website roots (`www/<site>/` by default)                     |
+| `acme/`      | XDeck | ACME HTTP-01 challenge files                                 |
+| `logs/`      | nginx | website logs (writable by nginx)                             |
+
+```yaml
+nginx:
+  service: nginx # Docker: the Compose service running nginx (default)
+```
+
+- **Docker.** Mount these paths into the service (anywhere; XDeck reads the mounts from
+  `docker compose config`) and use `network_mode: host`, so websites listen on the host's
+  ports and reach upstreams on `127.0.0.1`. XDeck runs `nginx -t` and `nginx -s reload`
+  with `docker compose exec` (`run --rm` while stopped).
+- **Process.** XDeck writes paths of the app directory into site configurations and calls
+  the control script for `test`, `reload` and `version`.
 
 ## Versions and updates
 

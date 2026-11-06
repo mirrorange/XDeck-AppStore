@@ -17,7 +17,7 @@ if (-not (Test-Path $exe) -or -not $state -or $state.version -ne $Version) {
 
 Set-State 'version' $Version
 Set-State 'exe' $exe
-foreach ($d in 'conf\sites', 'html', 'temp', 'logs') {
+foreach ($d in 'conf', 'conf.d', 'sites', 'ssl', 'www', 'acme', 'logs', 'html', 'temp', 'run') {
     New-Item -ItemType Directory -Force -Path (Join-Path $AppDir $d) | Out-Null
 }
 Write-Step "Using nginx $Version"
