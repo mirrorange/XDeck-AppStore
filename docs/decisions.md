@@ -78,3 +78,16 @@ package-manager apps leave upgrades of system packages to the system. An app get
 data migration between major versions).
 **Consequences.** Patch and minor releases are published by bumping the pinned download
 and `version`; reinstalls and updates share one tested path.
+
+## 009 · Nginx is a server for XDeck's websites
+
+**Context.** XDeck manages websites on installed Nginx apps (XDeck ADRs 048–049): it
+writes `sites/`, `ssl/` and `acme/` and needs to test and reload nginx.
+**Decision.** The Nginx app declares `nginx: { service: nginx }` and uses the layout of the
+authoring guide for both methods. `nginx.conf` is an extra file the user owns (placed once);
+what follows from settings is generated next to it (Docker: the default server from
+`templates/` at container start; process: `conf/main.conf` and `conf/http.conf` by
+configure). Docker uses host networking so sites listen on the host's ports; process apps
+ship `control` scripts for test, reload and version.
+**Consequences.** Version 1.30-1 changes the layout: installations of 1.30 get the new
+files on update (their old `conf.d/default.conf` or `conf/sites/` stay where they were).

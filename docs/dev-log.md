@@ -56,3 +56,21 @@ dark.
 
 **Not covered.** Windows and macOS scripts are parse-checked, not executed; the Windows
 PowerShell host is supervised, and start scripts stop leftover servers of a previous run.
+
+## 2026-11-06 · Nginx for websites
+
+**Goal.** Make the Nginx app a server XDeck's Websites module manages (ADR 009).
+
+**Done**
+
+- Manifest mirror: `nginx` section, `control` scripts (and their checks).
+- Nginx 1.30-1: fixed layout (`nginx.conf`, `conf.d/`, `sites/`, `ssl/`, `www/`, `acme/`,
+  `logs/`), Docker with host networking, bind mounts and the default page rendered from a
+  template, process `nginx.conf` with generated includes, `control.sh` / `control.ps1`.
+- Authoring guide: control scripts and the Nginx server contract.
+
+**Verification.** `pnpm test`, `pnpm build`; the Compose file started with Docker (host
+network, template, `nginx -t` through `compose exec`); `test/e2e/run.ts nginx process`
+passes against XDeck; sites, an ACME certificate (Pebble) and `nginx.conf` edits worked on
+both deployments through XDeck's UI. `run.ts nginx docker` stopped at the update's image
+pull here (Docker Hub unreachable), after installing and checking the app.
