@@ -23,6 +23,7 @@ const base = parseManifest({
       install: "process/install.sh",
       start: "process/start.sh",
       configure: "process/configure.sh",
+      update: "process/update.sh",
     },
     windows: { install: "process/install.ps1", start: "process/start.ps1" },
   },
@@ -62,6 +63,7 @@ describe("catalog helpers", () => {
       "install.sh",
       "configure.sh",
       "start.sh",
+      "update.sh",
       "install.ps1",
       "start.ps1",
     ]);

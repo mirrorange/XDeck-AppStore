@@ -59,7 +59,7 @@ export function reviewFiles(app: Manifest): { label: string; path: string }[] {
   if (app.docker) add(app.docker.compose);
   for (const s of [app.process?.unix, app.process?.windows]) {
     if (!s) continue;
-    for (const p of [s.install, s.configure, s.start, s.uninstall]) add(p);
+    for (const p of [s.install, s.configure, s.start, s.update, s.uninstall]) add(p);
   }
   // Same base name from different directories: show the full path.
   return out.map((f) =>

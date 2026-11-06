@@ -50,6 +50,8 @@ export interface Scripts {
   install: string;
   start: string;
   configure: string | null;
+  /** Runs when an installation moves to this version; `install` runs again without one. */
+  update: string | null;
   uninstall: string | null;
   lib: string[];
 }
@@ -251,6 +253,7 @@ function scripts(v: unknown, what: string): Scripts | null {
     install: scalar(v.install, `${what}.install`),
     start: scalar(v.start, `${what}.start`),
     configure: optionalString(v.configure, `${what}.configure`),
+    update: optionalString(v.update, `${what}.update`),
     uninstall: optionalString(v.uninstall, `${what}.uninstall`),
     lib: list(v.lib, `${what}.lib`).map((p) => scalar(p, `${what}.lib`)),
   };
@@ -280,7 +283,8 @@ export function referencedFiles(m: Manifest): string[] {
   if (m.process) {
     for (const s of [m.process.unix, m.process.windows]) {
       if (!s) continue;
-      for (const p of [s.install, s.start, s.configure, s.uninstall, ...s.lib]) if (p) out.add(p);
+      const paths = [s.install, s.start, s.configure, s.update, s.uninstall, ...s.lib];
+      for (const p of paths) if (p) out.add(p);
     }
     for (const f of m.process.files) out.add(f.source);
   }

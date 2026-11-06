@@ -90,7 +90,7 @@ describe("helpers", () => {
     icon: "icon.svg",
     process: {
       unix: { install: "p/install.sh", start: "p/start.sh", lib: ["p/lib.sh"] },
-      windows: { install: "p/install.ps1", start: "p/start.ps1" },
+      windows: { install: "p/install.ps1", start: "p/start.ps1", update: "p/update.ps1" },
       files: [{ source: "p/conf", target: "conf" }],
     },
   });
@@ -105,6 +105,7 @@ describe("helpers", () => {
       "p/lib.sh",
       "p/start.ps1",
       "p/start.sh",
+      "p/update.ps1",
     ]);
   });
 
