@@ -120,5 +120,10 @@ PostgreSQL 16 from the distribution, Redis 7.0, MySQL 8.4.11, MongoDB 8.0.32 dow
 XDeck listed them with their versions, created and dropped databases with users on each,
 followed a port change of Redis and changed the root password of MariaDB.
 
-**Not covered.** The Docker deployments and the client checks of the runner (no container
-engine here); MariaDB on macOS.
+`test/e2e/run.ts` then passed for all five apps with both methods (`docker` and
+`process`) against XDeck with Docker Engine 29 and Compose 5: client checks, XDeck
+managing the server after installing and after the port change, update, reinstall over
+kept data and removal. MySQL 8.4 over the published port authenticates with
+`caching_sha2_password` without TLS.
+
+**Not covered.** MariaDB on macOS.
