@@ -200,6 +200,23 @@ async function manage(x: XDeck, port: number) {
   });
   const { databases } = await x.call<{ databases: { name: string }[] }>("databases.list", { name });
   if (!databases.some((d) => d.name === db)) throw new Error(`${db} is not listed`);
+  if (i.engine !== "mongodb") {
+    // A dump of it, restored into it again.
+    const backup = await x.call<Task>("databases.backup", { name, database: db });
+    const done = await taskEnd(x, backup.id);
+    if (done.state !== "succeeded") throw new Error(`backup: ${done.error}`);
+    const { backups } = await x.call<{ backups: { path: string }[] }>("databases.backups", {
+      name,
+    });
+    const restore = await x.call<Task>("databases.restore", {
+      name,
+      database: db,
+      path: backups[0].path,
+    });
+    const restored = await taskEnd(x, restore.id);
+    if (restored.state !== "succeeded") throw new Error(`restore: ${restored.error}`);
+    await x.call("databases.backup.delete", { name, path: backups[0].path });
+  }
   await x.call("databases.drop", { name, database: db, drop_users: true });
 }
 
@@ -220,6 +237,13 @@ async function followTasks(x: XDeck) {
     }
   });
   await x.call("events.subscribe", { topics: ["tasks", "task:*"] });
+}
+
+/** Wait until a task ended. */
+async function taskEnd(_x: XDeck, id: string): Promise<Task> {
+  const done = ended.get(id) ?? (await new Promise<Task>((r) => waiting.set(id, r)));
+  waiting.delete(id);
+  return done;
 }
 
 /** Start an App Store operation and wait until its task ended. */
