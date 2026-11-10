@@ -17,6 +17,12 @@ import { XDeck } from "./xdeck";
 
 type Config = Record<string, string>;
 
+interface Task {
+  id: string;
+  state: "running" | "succeeded" | "failed";
+  error: string | null;
+}
+
 interface Installed {
   name: string;
   status: string;
@@ -158,37 +164,53 @@ async function verify(port: number, c: Config) {
   }
 }
 
-async function main() {
-  const x = await XDeck.connect(url, token);
+/** Tasks that ended, by id (the end may arrive before the reply that started them). */
+const ended = new Map<string, Task>();
+const waiting = new Map<string, (t: Task) => void>();
+
+/** Print task output and note task ends. Subscribe before starting tasks. */
+async function followTasks(x: XDeck) {
   x.on((n) => {
-    if (n.method !== "event.appstore.output") return;
-    for (const l of (n.params.lines as { line?: string; text?: string }[]) ?? []) {
-      console.log(`  | ${l.line ?? l.text ?? JSON.stringify(l)}`);
+    if (n.method === "event.tasks.output") {
+      for (const l of (n.params.lines as { text: string }[]) ?? []) console.log(`  | ${l.text}`);
+    } else if (n.method === "event.tasks.changed") {
+      const task = n.params.task as Task;
+      if (task.state === "running") return;
+      ended.set(task.id, task);
+      waiting.get(task.id)?.(task);
     }
   });
+  await x.call("events.subscribe", { topics: ["tasks", "task:*"] });
+}
+
+/** Start an App Store operation and wait until its task ended. */
+async function run(x: XDeck, what: string, method: string, params: Record<string, unknown>) {
+  const task = await x.call<Task>(method, params);
+  const done = ended.get(task.id) ?? (await new Promise<Task>((r) => waiting.set(task.id, r)));
+  waiting.delete(task.id);
+  if (done.state === "failed") throw new Error(`${what} failed: ${done.error}`);
+}
+
+async function main() {
+  const x = await XDeck.connect(url, token);
+  await followTasks(x);
   await x.call("appstore.repos.sync", { id: repo });
   const existing = await x.call<{ apps: Installed[] }>("appstore.installed.list");
   if (existing.apps.some((a) => a.name === name)) {
     console.log(`removing a previous ${name}`);
-    await x.call("appstore.uninstall", { name, delete_data: true, force: true });
+    await run(x, "removal", "appstore.uninstall", { name, delete_data: true, force: true });
   }
 
   const port = await freePort();
   console.log(`installing ${appId} (${method}) as ${name} on port ${port}`);
   const started = Date.now();
-  try {
-    await x.call("appstore.install", {
-      repo,
-      app: appId,
-      method,
-      name,
-      config: { ...extra, PORT: String(port) },
-      stream: "e2e",
-    });
-  } catch (e) {
-    const log = await lastLog(x);
-    throw new Error(`install failed: ${(e as Error).message}\n${log}`);
-  }
+  await run(x, "install", "appstore.install", {
+    repo,
+    app: appId,
+    method,
+    name,
+    config: { ...extra, PORT: String(port) },
+  });
   console.log(`installed in ${Math.round((Date.now() - started) / 1000)}s`);
   const app = await x.call<Installed>("appstore.get", { name });
   await retry(`${appId} answers on ${port}`, 180, () => verify(port, app.config));
@@ -196,36 +218,31 @@ async function main() {
   // The repository offers the installed version: the update runs the update
   // script (or install again) over the running installation.
   console.log("updating to the repository's version");
-  try {
-    await x.call("appstore.update", { name, stream: "e2e" });
-  } catch (e) {
-    throw new Error(`update failed: ${(e as Error).message}\n${await lastLog(x)}`);
-  }
+  await run(x, "update", "appstore.update", { name });
   await retry(`${appId} answers on ${port} after the update`, 180, () => verify(port, app.config));
 
   const moved = await freePort();
   console.log(`moving to port ${moved}`);
-  await x.call("appstore.configure", {
+  await run(x, "configure", "appstore.configure", {
     name,
     config: { ...app.config, PORT: String(moved) },
-    stream: "e2e",
   });
   await retry(`${appId} answers on ${moved}`, 180, () => verify(moved, app.config));
 
   // Uninstalling without deleting data, then installing again with the same
   // settings, must bring the existing data back.
   console.log("uninstalling, keeping data");
-  await x.call("appstore.uninstall", { name, delete_data: false, stream: "e2e" });
+  await run(x, "uninstall", "appstore.uninstall", { name, delete_data: false });
   await retry(`port ${moved} closed`, 30, async () => {
     if (await portOpen(moved)) throw new Error("still open");
   });
   console.log("installing again over the kept data");
   const config = { ...app.config, PORT: String(moved) };
-  await x.call("appstore.install", { repo, app: appId, method, name, config, stream: "e2e" });
+  await run(x, "reinstall", "appstore.install", { repo, app: appId, method, name, config });
   await retry(`${appId} answers on ${moved} with the kept data`, 180, () => verify(moved, config));
 
   console.log("uninstalling");
-  await x.call("appstore.uninstall", { name, delete_data: true, stream: "e2e" });
+  await run(x, "uninstall", "appstore.uninstall", { name, delete_data: true });
   const after = await x.call<{ apps: Installed[] }>("appstore.installed.list");
   if (after.apps.some((a) => a.name === name)) throw new Error("still installed");
   await retry(`port ${moved} closed`, 30, async () => {
@@ -233,17 +250,6 @@ async function main() {
   });
   x.close();
   console.log(`PASS ${appId} ${method}`);
-}
-
-async function lastLog(x: XDeck): Promise<string> {
-  try {
-    const ops = await x.call<{ operations: { id: number }[] }>("appstore.operations", { name });
-    const id = ops.operations[0]?.id;
-    if (id === undefined) return "";
-    return (await x.call<{ log: string }>("appstore.operation.log", { name, id })).log;
-  } catch {
-    return "";
-  }
 }
 
 main().then(
