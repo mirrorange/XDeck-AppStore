@@ -1,7 +1,7 @@
 // End-to-end check of an app against a running XDeck daemon: install with
-// default settings, verify the service, update it to the repository's
-// version, change its port, verify again, reinstall over the kept data and
-// uninstall with its data.
+// default settings, verify the service (and, for database servers, that
+// XDeck manages it), update it to the repository's version, change its port,
+// verify again, reinstall over the kept data and uninstall with its data.
 //
 //   XDECK_URL=http://127.0.0.1:9210 XDECK_TOKEN=xdk_... \
 //     tsx test/e2e/run.ts <app> <docker|process> [repo]
@@ -147,6 +147,16 @@ async function verify(port: number, c: Config) {
       }
       return;
     }
+    case "mariadb": {
+      const sql = "select 40+2";
+      const out = client(
+        "mariadb:11.8",
+        ["mariadb", "-h127.0.0.1", `-P${p}`, "-uroot", "-N", "-e", sql],
+        { MYSQL_PWD: c.MARIADB_ROOT_PASSWORD },
+      );
+      if (out.trim() !== "42") throw new Error(out);
+      return;
+    }
     case "mongodb": {
       const uri = `mongodb://${encodeURIComponent(c.MONGO_USERNAME)}:${encodeURIComponent(c.MONGO_PASSWORD)}@127.0.0.1:${p}/admin`;
       const out = client("mongo:8.0", [
@@ -162,6 +172,35 @@ async function verify(port: number, c: Config) {
     default:
       if (!(await portOpen(port))) throw new Error(`port ${port} is closed`);
   }
+}
+
+interface DbInstance {
+  port: number;
+  server_version: string | null;
+  error: string | null;
+  engine: string;
+}
+
+/**
+ * Database servers: XDeck reaches the server on `port` and can create and
+ * drop a database with its own user there.
+ */
+async function manage(x: XDeck, port: number) {
+  const i = await x.call<DbInstance>("databases.get", { name });
+  if (i.port !== port) throw new Error(`XDeck connects to port ${i.port}`);
+  if (i.error || !i.server_version) throw new Error(i.error ?? "no server version");
+  if (i.engine === "redis") {
+    await x.call("databases.redis.keys", { name, db: 0 });
+    return;
+  }
+  const db = `e2e_${Date.now().toString(36)}`;
+  await x.call("databases.create", {
+    name,
+    database: { name: db, user: { name: db, password: "e2e-Pass-1234" } },
+  });
+  const { databases } = await x.call<{ databases: { name: string }[] }>("databases.list", { name });
+  if (!databases.some((d) => d.name === db)) throw new Error(`${db} is not listed`);
+  await x.call("databases.drop", { name, database: db, drop_users: true });
 }
 
 /** Tasks that ended, by id (the end may arrive before the reply that started them). */
@@ -214,6 +253,8 @@ async function main() {
   console.log(`installed in ${Math.round((Date.now() - started) / 1000)}s`);
   const app = await x.call<Installed>("appstore.get", { name });
   await retry(`${appId} answers on ${port}`, 180, () => verify(port, app.config));
+  const database = await x.call<DbInstance>("databases.get", { name }).catch(() => null);
+  if (database) await retry(`XDeck manages ${name}`, 60, () => manage(x, port));
 
   // The repository offers the installed version: the update runs the update
   // script (or install again) over the running installation.
@@ -228,6 +269,7 @@ async function main() {
     config: { ...app.config, PORT: String(moved) },
   });
   await retry(`${appId} answers on ${moved}`, 180, () => verify(moved, app.config));
+  if (database) await retry(`XDeck manages ${name} on ${moved}`, 60, () => manage(x, moved));
 
   // Uninstalling without deleting data, then installing again with the same
   // settings, must bring the existing data back.
