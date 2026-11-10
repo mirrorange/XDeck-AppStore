@@ -74,3 +74,26 @@ network, template, `nginx -t` through `compose exec`); `test/e2e/run.ts nginx pr
 passes against XDeck; sites, an ACME certificate (Pebble) and `nginx.conf` edits worked on
 both deployments through XDeck's UI. `run.ts nginx docker` stopped at the update's image
 pull here (Docker Hub unreachable), after installing and checking the app.
+
+## 2026-11-10 · Nginx networks chosen by XDeck
+
+**Goal.** Docker Nginx servers were unreachable with Docker Desktop and other engines in a
+virtual machine, where `network_mode: host` is the VM's network (XDeck ADR 054).
+
+**Done**
+
+- Nginx 1.30-2: no `network_mode` (XDeck adds the host network or publishes the ports),
+  the default page listens on `${NGINX_PORT}` on every address, `BIND` only for the process
+  deployment; description in en / zh.
+- Authoring guide and ADR 009: Nginx apps leave the network of the service to XDeck.
+
+**Verification.** `pnpm check`, `pnpm build`; `test/e2e/run.ts nginx docker` passes against
+XDeck on a Linux engine with the host network and with published ports
+(`host_network = "isolated"`, the port change re-publishes the default page), and
+`run.ts nginx process` still passes.
+
+**Notes**
+
+- Installations of 1.30-1 keep `templates/default-server.conf.template` (extra files are
+  placed only when missing); it uses `${NGINX_BIND}`, which 1.30-2 no longer sets. Replace
+  it with the new template after updating, or reinstall.

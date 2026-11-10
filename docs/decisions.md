@@ -87,7 +87,11 @@ writes `sites/`, `ssl/` and `acme/` and needs to test and reload nginx.
 authoring guide for both methods. `nginx.conf` is an extra file the user owns (placed once);
 what follows from settings is generated next to it (Docker: the default server from
 `templates/` at container start; process: `conf/main.conf` and `conf/http.conf` by
-configure). Docker uses host networking so sites listen on the host's ports; process apps
-ship `control` scripts for test, reload and version.
+configure). Process apps ship `control` scripts for test, reload and version. The Docker
+deployment sets neither `network_mode` nor `ports`: XDeck gives the service the host
+network or publishes the ports nginx listens on, depending on the engine (XDeck ADR 054),
+so the default page listens on its port on every address and `BIND` is a process setting.
 **Consequences.** Version 1.30-1 changes the layout: installations of 1.30 get the new
 files on update (their old `conf.d/default.conf` or `conf/sites/` stay where they were).
+Version 1.30-2 drops host networking; installations of 1.30-1 keep their default page
+template, which still uses `NGINX_BIND`: replace it with the new one after updating.

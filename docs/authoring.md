@@ -135,9 +135,12 @@ nginx:
 ```
 
 - **Docker.** Mount these paths into the service (anywhere; XDeck reads the mounts from
-  `docker compose config`) and use `network_mode: host`, so websites listen on the host's
-  ports and reach upstreams on `127.0.0.1`. XDeck runs `nginx -t` and `nginx -s reload`
-  with `docker compose exec` (`run --rm` while stopped).
+  `docker compose config`). Leave `network_mode` and `ports` of the service out: XDeck
+  layers its own Compose file over yours with the host network (Docker Engine on Linux) or
+  with every port nginx listens on published under the same number (Docker Desktop and
+  other engines in a virtual machine), so websites are reached on this machine's ports
+  either way. Listen on ports, not on `127.0.0.1` inside the container. XDeck runs
+  `nginx -T` and `nginx -s reload` with `docker compose exec` (`run --rm` while stopped).
 - **Process.** XDeck writes paths of the app directory into site configurations and calls
   the control script for `test`, `reload` and `version`.
 
