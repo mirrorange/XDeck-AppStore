@@ -25,7 +25,40 @@ describe("parseManifest", () => {
       docker: { compose: "compose.yaml", files: [] },
       process: null,
       nginx: null,
+      database: null,
     });
+  });
+
+  it("reads the database integration", () => {
+    const settings = [
+      { key: "PORT", type: "port", default: 5432 },
+      { key: "PASSWORD", type: "password", generate: true },
+    ];
+    const m = parseManifest({
+      ...minimal,
+      settings,
+      database: { engine: "postgresql", port: "${PORT}", password: "${PASSWORD}" },
+    });
+    expect(m.database).toEqual({
+      engine: "postgresql",
+      host: null,
+      port: "${PORT}",
+      user: null,
+      password: "${PASSWORD}",
+      database: null,
+    });
+    expect(
+      parseManifest({ ...minimal, database: { engine: "redis", port: 6379 } }).database?.port,
+    ).toBe("6379");
+    expect(() =>
+      parseManifest({ ...minimal, settings, database: { engine: "redis", port: "${NOPE}" } }),
+    ).toThrow("unknown setting NOPE");
+    expect(() => parseManifest({ ...minimal, database: { engine: "oracle", port: 1 } })).toThrow(
+      "database.engine",
+    );
+    expect(() =>
+      parseManifest({ ...minimal, settings, database: { engine: "redis", port: "$${PORT}" } }),
+    ).not.toThrow();
   });
 
   it("reads the Nginx integration", () => {

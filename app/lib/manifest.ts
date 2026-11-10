@@ -58,6 +58,25 @@ export interface Scripts {
   lib: string[];
 }
 
+export type DbEngine = "mysql" | "mariadb" | "postgresql" | "redis" | "mongodb";
+export const DB_ENGINES: readonly DbEngine[] = [
+  "mysql",
+  "mariadb",
+  "postgresql",
+  "redis",
+  "mongodb",
+];
+
+/** How XDeck connects to a database server; fields may use `${KEY}`. */
+export interface DatabaseIntegration {
+  engine: DbEngine;
+  host: string | null;
+  port: string;
+  user: string | null;
+  password: string | null;
+  database: string | null;
+}
+
 export interface HealthCheck {
   type: "tcp" | "http";
   host: string | null;
@@ -87,6 +106,8 @@ export interface Manifest {
   } | null;
   /** XDeck manages websites on installations of this app. */
   nginx: { service: string } | null;
+  /** XDeck manages the databases and users of installations of this app. */
+  database: DatabaseIntegration | null;
 }
 
 export interface RepoMeta {
@@ -302,6 +323,7 @@ export function parseManifest(raw: unknown): Manifest {
   const docker = raw.docker;
   const process = raw.process;
   const nginx = raw.nginx;
+  const database = raw.database;
   const m: Manifest = {
     id: scalar(raw.id, "id"),
     name: scalar(raw.name, "name"),
@@ -342,6 +364,19 @@ export function parseManifest(raw: unknown): Manifest {
         : isObject(nginx)
           ? { service: optionalString(nginx.service, "nginx.service") ?? "nginx" }
           : fail("nginx: expected a map"),
+    database:
+      database === undefined || database === null
+        ? null
+        : isObject(database)
+          ? {
+              engine: oneOf(database.engine, DB_ENGINES, "database.engine"),
+              host: optionalString(database.host, "database.host"),
+              port: scalar(database.port, "database.port"),
+              user: optionalString(database.user, "database.user"),
+              password: optionalString(database.password, "database.password"),
+              database: optionalString(database.database, "database.database"),
+            }
+          : fail("database: expected a map"),
   };
   validate(m);
   return m;
@@ -394,6 +429,15 @@ export function validate(m: Manifest): void {
   if (m.nginx && !/^[A-Za-z0-9._-]+$/.test(m.nginx.service)) {
     fail(`invalid nginx service ${JSON.stringify(m.nginx.service)}`);
   }
+  if (m.database) {
+    if (!m.database.port.trim()) fail("database integrations need a port");
+    const d = m.database;
+    for (const t of [d.host, d.port, d.user, d.password, d.database]) {
+      for (const key of references(t ?? "")) {
+        if (!keys.has(key)) fail(`the database integration uses an unknown setting ${key}`);
+      }
+    }
+  }
   if (m.icon && !iconType(m.icon)) fail(`icon ${m.icon} must be .svg, .png or .webp`);
   if (m.docker) checkTargets(m.docker.files);
   if (m.process) {
@@ -412,6 +456,11 @@ export function validate(m: Manifest): void {
     if (h?.type === "tcp" && !h.port) fail("tcp health checks need a port");
     if (h?.type === "http" && !h.url) fail("http health checks need a url");
   }
+}
+
+/** The names `${NAME}` refers to in a template (`$$` is a literal `$`). */
+export function references(template: string): string[] {
+  return [...template.replaceAll("$$", "").matchAll(/\$\{([^}]*)\}/g)].map((m) => m[1]);
 }
 
 export function parseMeta(raw: unknown): RepoMeta {
