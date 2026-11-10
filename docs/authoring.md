@@ -158,13 +158,19 @@ database:
   user: ${POSTGRES_USER} # default: root (MySQL, MariaDB), postgres; none for Redis
   password: ${POSTGRES_PASSWORD}
   database: ${POSTGRES_DB} # PostgreSQL: the database to connect to (default postgres)
+  service: postgres # Docker: the service running the server (default: the only one)
+  tools: bin # process: directory of pg_dump / mysqldump / … (default: PATH)
 ```
 
 - The administrator must be able to log in with that password over TCP from this machine
   (MySQL / MariaDB: `root@'%'`; PostgreSQL: a `host` rule with `scram-sha-256` for
   `127.0.0.1`; MongoDB: a user in `admin` with `root`). Remove anonymous MySQL accounts:
   they shadow `user@'%'` for local connections.
-- **Docker.** Publish the port on `${BIND}`; XDeck connects to it on this machine.
+- **Docker.** Publish the port on `${BIND}`; XDeck connects to it on this machine. Backups
+  run the image's own tools in the service (`mysqldump` / `mariadb-dump` and `mysql` /
+  `mariadb` through the local socket as the administrator; `pg_dump` and `psql`).
+- **Process.** Backups run the tools from `tools` or `PATH` over TCP; ship them with the
+  server (the MySQL archive has them in `mysql/bin`).
 - When `password` is a single `${KEY}`, XDeck changes that setting along with the
   administrator's password (it should be `install_only` when the server stores it at
   initialization). Redis passwords are changed through the app's settings.

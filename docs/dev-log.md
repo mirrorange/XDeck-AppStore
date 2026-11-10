@@ -127,3 +127,19 @@ kept data and removal. MySQL 8.4 over the published port authenticates with
 `caching_sha2_password` without TLS.
 
 **Not covered.** MariaDB on macOS.
+
+## 2026-11-10 · Database backups
+
+**Goal.** XDeck backs up and restores MySQL, MariaDB and PostgreSQL databases with the
+servers' own tools (XDeck ADR 066).
+
+**Done**
+
+- Manifest mirror: `database.service` and `database.tools`.
+- MySQL 8.4-2: `tools: mysql/bin` (the archive's `mysqldump` and `mysql`).
+- End-to-end runner: SQL servers back up the test database, restore it and delete the
+  backup.
+- Authoring guide: where backups run.
+
+**Verification.** `pnpm check`, `pnpm build`; `test/e2e/run.ts` passes for MySQL, MariaDB
+and PostgreSQL with both methods, and still for MongoDB (Docker) and Redis (process).
