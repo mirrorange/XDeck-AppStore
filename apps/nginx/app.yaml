@@ -1,6 +1,6 @@
 id: nginx
 name: Nginx
-version: "1.30-1"
+version: "1.30-2"
 summary:
   en: High-performance web server, reverse proxy and load balancer.
   zh: 高性能 Web 服务器、反向代理与负载均衡器。
@@ -9,15 +9,19 @@ description:
     Serves the default page on its port and the websites you create under
     Websites in XDeck: static sites, reverse proxies and redirects with HTTPS
     certificates. nginx.conf and conf.d/*.conf in the app directory are yours
-    to edit. The Docker deployment uses host networking, so sites listen on
-    the host's ports directly. On Linux and macOS the process deployment uses
-    nginx from the system package manager; on Windows it downloads the
-    official build from nginx.org.
+    to edit. With Docker, XDeck picks the network: the host network with
+    Docker Engine on Linux, every port nginx listens on published with Docker
+    Desktop and other engines in a virtual machine, so sites are reached on
+    this machine's ports either way. On Linux and macOS the process
+    deployment uses nginx from the system package manager; on Windows it
+    downloads the official build from nginx.org.
   zh: |-
     在其端口上提供默认页面，并运行你在 XDeck「网站」中创建的站点：静态站点、反向代理和
     重定向，支持 HTTPS 证书。应用目录中的 nginx.conf 与 conf.d/*.conf 可自行编辑。
-    Docker 部署使用主机网络，站点直接监听主机端口。在 Linux 和 macOS 上，进程守护部署
-    使用系统包管理器提供的 nginx；在 Windows 上从 nginx.org 下载官方版本。
+    Docker 部署的网络由 XDeck 选择：Linux 上的 Docker Engine 使用主机网络，Docker Desktop
+    等运行在虚拟机中的引擎则发布 nginx 监听的每个端口，两种情况下站点都通过本机端口访问。
+    在 Linux 和 macOS 上，进程守护部署使用系统包管理器提供的 nginx；在 Windows 上从
+    nginx.org 下载官方版本。
 icon: icon.svg
 categories: [web, proxy]
 homepage: https://nginx.org
@@ -31,6 +35,8 @@ settings:
   - key: BIND
     type: select
     default: 0.0.0.0
+    # Docker: XDeck publishes the ports of the container on every address.
+    methods: [process]
     label: { en: Listen address, zh: 监听地址 }
     options:
       - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }

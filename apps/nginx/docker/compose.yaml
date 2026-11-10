@@ -2,10 +2,9 @@ services:
   nginx:
     image: nginx:1.30-alpine
     restart: unless-stopped
-    # Sites listen on the host's ports and reach upstreams on 127.0.0.1.
-    network_mode: host
+    # No network_mode or ports: XDeck adds the host network or publishes the
+    # ports nginx listens on, depending on the container engine.
     environment:
-      NGINX_BIND: ${BIND:-0.0.0.0}
       NGINX_PORT: ${PORT:-8080}
       # templates/*.template → /etc/nginx/* when the container starts.
       NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
