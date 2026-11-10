@@ -95,3 +95,18 @@ so the default page listens on its port on every address and `BIND` is a process
 files on update (their old `conf.d/default.conf` or `conf/sites/` stay where they were).
 Version 1.30-2 drops host networking; installations of 1.30-1 keep their default page
 template, which still uses `NGINX_BIND`: replace it with the new one after updating.
+
+## 010 · Database servers declare how XDeck connects
+
+**Context.** XDeck manages databases, users and access on database servers installed from
+the App Store (XDeck ADRs 062–065). It needs the address, port and administrator of each
+installation, which only the app knows.
+**Decision.** MySQL 8.4-1, PostgreSQL 17-1, Redis 8.2-1 and MongoDB 8.0-1 declare a
+`database` section with templates over their settings (`BIND`, `PORT`, the administrator
+and its password). A MariaDB app joins them: `mariadb:11.8` for Docker, the system package
+(Homebrew on macOS) for the process deployment, set up like MySQL (root password,
+`root@'%'`, optional database and user, anonymous accounts removed). Versions are bumped so
+installations pick the section up with an update; nothing else changes for them.
+**Consequences.** XDeck reaches every server over TCP on this machine with the
+credentials the install used; changing the root password in XDeck changes the setting
+too. MariaDB has no Windows process deployment.

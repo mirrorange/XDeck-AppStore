@@ -97,3 +97,28 @@ XDeck on a Linux engine with the host network and with published ports
 - Installations of 1.30-1 keep `templates/default-server.conf.template` (extra files are
   placed only when missing); it uses `${NGINX_BIND}`, which 1.30-2 no longer sets. Replace
   it with the new template after updating, or reinstall.
+
+## 2026-11-10 · Database servers for XDeck
+
+**Goal.** Let XDeck manage the databases and users of the database apps (ADR 010).
+
+**Done**
+
+- Manifest mirror: `database` section (engine, host, port, user, password, database;
+  references must be settings), in the normalized form XDeck reads from `index.json`.
+- MySQL 8.4-1, PostgreSQL 17-1, Redis 8.2-1, MongoDB 8.0-1: `database` sections.
+- MariaDB 11.8: Docker (`mariadb:11.8`, health check) and process (system package or
+  Homebrew; configuration, data and socket in the app directory; root password, `root@'%'`,
+  optional database and user; anonymous accounts removed; packaged service disabled).
+- End-to-end runner: MariaDB client check; for database servers, XDeck reaches the server
+  on the installed and on the moved port and creates and drops a database with its user.
+- Authoring guide: database servers; README.
+
+**Verification.** `pnpm check`, `pnpm build`. Against XDeck on Ubuntu 24.04 (as root), all
+five apps installed as processes from this repository built locally (MariaDB 10.11 and
+PostgreSQL 16 from the distribution, Redis 7.0, MySQL 8.4.11, MongoDB 8.0.32 downloaded);
+XDeck listed them with their versions, created and dropped databases with users on each,
+followed a port change of Redis and changed the root password of MariaDB.
+
+**Not covered.** The Docker deployments and the client checks of the runner (no container
+engine here); MariaDB on macOS.

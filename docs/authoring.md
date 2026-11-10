@@ -144,6 +144,31 @@ nginx:
 - **Process.** XDeck writes paths of the app directory into site configurations and calls
   the control script for `test`, `reload` and `version`.
 
+## Database servers
+
+An app with a `database` section is a server XDeck manages databases and users of
+(Databases in XDeck). XDeck connects over TCP as the administrator; every field may use
+`${KEY}`:
+
+```yaml
+database:
+  engine: postgresql # mysql | mariadb | postgresql | redis | mongodb
+  host: ${BIND} # listen address; 0.0.0.0 and :: are reached on loopback (default 127.0.0.1)
+  port: ${PORT}
+  user: ${POSTGRES_USER} # default: root (MySQL, MariaDB), postgres; none for Redis
+  password: ${POSTGRES_PASSWORD}
+  database: ${POSTGRES_DB} # PostgreSQL: the database to connect to (default postgres)
+```
+
+- The administrator must be able to log in with that password over TCP from this machine
+  (MySQL / MariaDB: `root@'%'`; PostgreSQL: a `host` rule with `scram-sha-256` for
+  `127.0.0.1`; MongoDB: a user in `admin` with `root`). Remove anonymous MySQL accounts:
+  they shadow `user@'%'` for local connections.
+- **Docker.** Publish the port on `${BIND}`; XDeck connects to it on this machine.
+- When `password` is a single `${KEY}`, XDeck changes that setting along with the
+  administrator's password (it should be `install_only` when the server stores it at
+  initialization). Redis passwords are changed through the app's settings.
+
 ## Versions and updates
 
 XDeck offers an update when the repository's `version` is newer than the installed one

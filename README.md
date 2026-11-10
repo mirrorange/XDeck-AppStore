@@ -9,10 +9,12 @@ you browse the apps in a browser.
 | Nginx      | `nginx:1.30-alpine`  | system package · system package · nginx.org build |
 | PostgreSQL | `postgres:17-alpine` | system package · Homebrew · —                     |
 | MySQL      | `mysql:8.4`          | official 8.4 LTS build on all three               |
+| MariaDB    | `mariadb:11.8`       | system package · Homebrew · —                     |
 | Redis      | `redis:8.2-alpine`   | system package (Redis or Valkey) · Homebrew · —   |
 | MongoDB    | `mongo:8.0`          | official 8.0 build and mongosh on all three       |
 
-Data stays under the XDeck data directory: Docker apps bind-mount `./data` inside their
+The database servers declare how XDeck connects to them, so their databases and users are
+managed under **Databases** in XDeck. Data stays under the XDeck data directory: Docker apps bind-mount `./data` inside their
 Compose project, process apps keep everything in `<data_dir>/apps/<name>/`.
 
 ## Layout
