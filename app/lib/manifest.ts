@@ -75,6 +75,10 @@ export interface DatabaseIntegration {
   user: string | null;
   password: string | null;
   database: string | null;
+  /** Docker: the Compose service running the server (default: the only one). */
+  service: string | null;
+  /** Process: directory with the client tools, relative to the app directory. */
+  tools: string | null;
 }
 
 export interface HealthCheck {
@@ -375,6 +379,8 @@ export function parseManifest(raw: unknown): Manifest {
               user: optionalString(database.user, "database.user"),
               password: optionalString(database.password, "database.password"),
               database: optionalString(database.database, "database.database"),
+              service: optionalString(database.service, "database.service"),
+              tools: optionalString(database.tools, "database.tools"),
             }
           : fail("database: expected a map"),
   };
@@ -431,6 +437,10 @@ export function validate(m: Manifest): void {
   }
   if (m.database) {
     if (!m.database.port.trim()) fail("database integrations need a port");
+    if (m.database.service !== null && !/^[A-Za-z0-9._-]+$/.test(m.database.service)) {
+      fail(`invalid database service ${JSON.stringify(m.database.service)}`);
+    }
+    if (m.database.tools !== null) checkRelativePath(m.database.tools);
     const d = m.database;
     for (const t of [d.host, d.port, d.user, d.password, d.database]) {
       for (const key of references(t ?? "")) {

@@ -46,7 +46,12 @@ describe("parseManifest", () => {
       user: null,
       password: "${PASSWORD}",
       database: null,
+      service: null,
+      tools: null,
     });
+    expect(() =>
+      parseManifest({ ...minimal, database: { engine: "mysql", port: 1, tools: "../bin" } }),
+    ).toThrow();
     expect(
       parseManifest({ ...minimal, database: { engine: "redis", port: 6379 } }).database?.port,
     ).toBe("6379");
