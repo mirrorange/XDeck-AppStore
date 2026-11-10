@@ -1,6 +1,6 @@
 id: mysql
 name: MySQL
-version: "8.4"
+version: "8.4-1"
 summary:
   en: The popular open-source relational database (LTS release).
   zh: 流行的开源关系型数据库（LTS 版本）。
@@ -58,6 +58,13 @@ settings:
     generate: true
     install_only: true
     label: { en: User password, zh: 用户密码 }
+
+database:
+  engine: mysql
+  host: ${BIND}
+  port: ${PORT}
+  user: root
+  password: ${MYSQL_ROOT_PASSWORD}
 
 docker:
   compose: docker/compose.yaml

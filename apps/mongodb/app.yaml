@@ -1,6 +1,6 @@
 id: mongodb
 name: MongoDB
-version: "8.0"
+version: "8.0-1"
 summary:
   en: Document database with flexible schemas and rich queries.
   zh: 灵活模式、查询能力丰富的文档数据库。
@@ -43,6 +43,13 @@ settings:
     generate: true
     install_only: true
     label: { en: Root password, zh: root 密码 }
+
+database:
+  engine: mongodb
+  host: ${BIND}
+  port: ${PORT}
+  user: ${MONGO_USERNAME}
+  password: ${MONGO_PASSWORD}
 
 docker:
   compose: docker/compose.yaml

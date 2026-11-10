@@ -1,6 +1,6 @@
 id: postgresql
 name: PostgreSQL
-version: "17"
+version: "17-1"
 summary:
   en: Advanced open-source relational database.
   zh: 功能强大的开源关系型数据库。
@@ -49,6 +49,14 @@ settings:
     required: true
     install_only: true
     label: { en: Database, zh: 数据库 }
+
+database:
+  engine: postgresql
+  host: ${BIND}
+  port: ${PORT}
+  user: ${POSTGRES_USER}
+  password: ${POSTGRES_PASSWORD}
+  database: ${POSTGRES_DB}
 
 docker:
   compose: docker/compose.yaml

@@ -1,6 +1,6 @@
 id: redis
 name: Redis
-version: "8.2"
+version: "8.2-1"
 summary:
   en: In-memory data store for caching, queues and real-time workloads.
   zh: 内存数据存储，适用于缓存、队列与实时场景。
@@ -41,6 +41,12 @@ settings:
     description:
       en: For example 256mb or 2gb. Empty for no limit.
       zh: 例如 256mb 或 2gb，留空表示不限制。
+
+database:
+  engine: redis
+  host: ${BIND}
+  port: ${PORT}
+  password: ${REDIS_PASSWORD}
 
 docker:
   compose: docker/compose.yaml
