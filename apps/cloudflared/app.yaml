@@ -8,15 +8,10 @@ description:
   en: |-
     Runs a Cloudflare Tunnel: an outbound connection to Cloudflare through which
     websites and ports of this machine are reached under your domains, also behind
-    NAT or a firewall. Create the tunnel under Remote access in XDeck (XDeck installs
-    this app and keeps its public hostnames and DNS records), or paste the token of a
-    tunnel created in the Cloudflare dashboard. The Docker deployment uses the host
-    network; the process deployment downloads the official build.
+    NAT or a firewall.
   zh: |-
     运行 Cloudflare Tunnel：本机主动连接到 Cloudflare，通过你的域名访问本机的网站和端口，
-    即使位于 NAT 或防火墙之后。可在 XDeck「远程访问」中创建隧道（XDeck 会安装本应用并管理
-    公网主机名与 DNS 记录），也可粘贴在 Cloudflare 控制台创建的隧道令牌。Docker 部署使用
-    主机网络；进程守护部署会下载官方版本。
+    即使位于 NAT 或防火墙之后。
 icon: icon.svg
 categories: [network, tunnel]
 homepage: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
@@ -27,9 +22,6 @@ settings:
     type: password
     required: true
     label: { en: Tunnel token, zh: 隧道令牌 }
-    description:
-      en: From Remote access in XDeck, or the tunnel's page in the Cloudflare dashboard.
-      zh: 来自 XDeck「远程访问」，或 Cloudflare 控制台中该隧道的页面。
   - key: PROTOCOL
     type: select
     default: auto

@@ -6,17 +6,12 @@ summary:
   zh: 部署在公网机器上的 frp 服务端，frp 客户端通过它发布网站和端口。
 description:
   en: |-
-    Install it on a machine with a public address. frp clients (the frp client app,
-    managed under Remote access in another XDeck) connect to it with the token and
+    Install it on a machine with a public address. frp clients connect to it with the token and
     publish websites on its HTTP and HTTPS ports by domain name, and TCP or UDP
-    ports on its own ports. XDeck shows the connection details to copy and the
-    clients and proxies that are connected. The Docker deployment uses the host
-    network; the process deployment downloads the official build.
+    ports on its own ports.
   zh: |-
-    安装在具有公网地址的机器上。frp 客户端（frp 客户端应用，可在另一台 XDeck 的「远程访问」
-    中管理）使用令牌连接到它，按域名通过其 HTTP、HTTPS 端口发布网站，或通过其端口发布 TCP、
-    UDP 端口。XDeck 会显示可复制的连接信息以及已连接的客户端与代理。Docker 部署使用主机
-    网络；进程守护部署会下载官方版本。
+    安装在具有公网地址的机器上。frp 客户端（使用令牌连接到它，按域名通过其 HTTP、HTTPS 端口发布网站，或通过其端口
+    发布 TCP、UDP 端口。
 icon: icon.svg
 categories: [network, tunnel]
 homepage: https://github.com/fatedier/frp
