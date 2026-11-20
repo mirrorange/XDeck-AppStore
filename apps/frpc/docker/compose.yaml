@@ -1,0 +1,10 @@
+services:
+  frpc:
+    image: fatedier/frpc:v0.72.0
+    restart: unless-stopped
+    # Local services are reached as they are from this machine.
+    network_mode: host
+    command: [-c, /etc/frp/frpc.toml]
+    volumes:
+      # A directory: XDeck replaces the file, and a file mount would keep the old one.
+      - ./conf:/etc/frp:ro

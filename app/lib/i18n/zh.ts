@@ -36,6 +36,8 @@ const zh: Translation = {
     sql: "SQL",
     nosql: "NoSQL",
     proxy: "代理",
+    network: "网络",
+    tunnel: "隧道",
   },
   methods: { docker: "Docker", process: "进程守护" },
   platforms: { linux: "Linux", macos: "macOS", windows: "Windows" },

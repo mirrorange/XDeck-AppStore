@@ -1,0 +1,11 @@
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.11.1
+    restart: unless-stopped
+    # Local services are reached as they are from this machine.
+    network_mode: host
+    command: [tunnel, --no-autoupdate, run]
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?a tunnel token is required}
+      TUNNEL_TRANSPORT_PROTOCOL: ${PROTOCOL:-auto}
+      TUNNEL_METRICS: 127.0.0.1:${METRICS_PORT:-20241}

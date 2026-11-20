@@ -4,17 +4,23 @@ The official software repository of [XDeck](https://github.com/mirrorange/XDeck)
 at **https://appstore.xdeck.top**. XDeck reads it as a Web repository; the same site lets
 you browse the apps in a browser.
 
-| App        | Docker               | Process (Linux / macOS / Windows)                 |
-| ---------- | -------------------- | ------------------------------------------------- |
-| Nginx      | `nginx:1.30-alpine`  | system package · system package · nginx.org build |
-| PostgreSQL | `postgres:17-alpine` | system package · Homebrew · —                     |
-| MySQL      | `mysql:8.4`          | official 8.4 LTS build on all three               |
-| MariaDB    | `mariadb:11.8`       | system package · Homebrew · —                     |
-| Redis      | `redis:8.2-alpine`   | system package (Redis or Valkey) · Homebrew · —   |
-| MongoDB    | `mongo:8.0`          | official 8.0 build and mongosh on all three       |
+| App         | Docker                             | Process (Linux / macOS / Windows)                 |
+| ----------- | ---------------------------------- | ------------------------------------------------- |
+| Nginx       | `nginx:1.30-alpine`                | system package · system package · nginx.org build |
+| PostgreSQL  | `postgres:17-alpine`               | system package · Homebrew · —                     |
+| MySQL       | `mysql:8.4`                        | official 8.4 LTS build on all three               |
+| MariaDB     | `mariadb:11.8`                     | system package · Homebrew · —                     |
+| Redis       | `redis:8.2-alpine`                 | system package (Redis or Valkey) · Homebrew · —   |
+| MongoDB     | `mongo:8.0`                        | official 8.0 build and mongosh on all three       |
+| Cloudflared | `cloudflare/cloudflared:2026.11.1` | official build on all three (Windows x86-64)      |
+| frp server  | `fatedier/frps:v0.72.0`            | official build on all three                       |
+| frp client  | `fatedier/frpc:v0.72.0`            | official build on all three                       |
 
 The database servers declare how XDeck connects to them, so their databases and users are
-managed under **Databases** in XDeck. Data stays under the XDeck data directory: Docker apps bind-mount `./data` inside their
+managed under **Databases** in XDeck. Cloudflared and the frp client are tunnel connectors
+XDeck manages under **Remote access** (it installs them for a tunnel, keeps the token or
+writes the configuration); XDeck shows the connection details and clients of an frp
+server. Data stays under the XDeck data directory: Docker apps bind-mount `./data` inside their
 Compose project, process apps keep everything in `<data_dir>/apps/<name>/`.
 
 ## Layout

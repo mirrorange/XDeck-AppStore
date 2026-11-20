@@ -110,3 +110,23 @@ installations pick the section up with an update; nothing else changes for them.
 **Consequences.** XDeck reaches every server over TCP on this machine with the
 credentials the install used; changing the root password in XDeck changes the setting
 too. MariaDB has no Windows process deployment.
+
+## 011 · Tunnel connectors and the frp server are XDeck integrations
+
+**Context.** XDeck publishes websites and ports of a machine without a public address
+through Cloudflare Tunnel or a self-hosted frp server (XDeck ADRs 076–078). It installs and
+configures the connectors itself, and needs to know where an installation keeps its token
+or configuration.
+**Decision.** Cloudflared, the frp client and the frp server declare a `tunnel` section.
+Cloudflared takes the tunnel token as a required setting (`token: ${TUNNEL_TOKEN}`), so a
+tunnel created in the Cloudflare dashboard works without XDeck too, and exposes metrics on
+`127.0.0.1` for the connection status. The frp client has no settings: XDeck writes
+`conf/frpc.toml` (a placeholder that keeps retrying is placed at installation), so Docker
+mounts `conf/`. The frp server writes `frps.toml` from its settings (Docker: at every start
+in the container's shell; process: configure, checked with `frps verify`) with the token,
+ports for websites, the subdomain host, allowed ports and the dashboard, which XDeck reads.
+Docker deployments use the host network; process deployments download the official builds
+with pinned SHA-256 (cloudflared 2026.11.1, frp 0.72.0).
+**Consequences.** A connector reaches local services at the addresses this machine uses.
+On Docker Desktop and other engines in a virtual machine the host network is the VM's, so
+the process deployment is the one to use there. Cloudflared has no Windows ARM build.

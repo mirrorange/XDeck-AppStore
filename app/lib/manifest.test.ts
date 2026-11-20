@@ -26,6 +26,7 @@ describe("parseManifest", () => {
       process: null,
       nginx: null,
       database: null,
+      tunnel: null,
     });
   });
 
@@ -77,6 +78,37 @@ describe("parseManifest", () => {
     expect(parseManifest({ ...minimal, nginx: { service: "web" } }).nginx).toEqual({
       service: "web",
     });
+  });
+
+  it("reads the tunnel integration", () => {
+    const settings = [
+      { key: "TUNNEL_TOKEN", type: "password" },
+      { key: "PORT", type: "port" },
+    ];
+    const m = parseManifest({
+      ...minimal,
+      settings,
+      tunnel: { kind: "cloudflared", token: "${TUNNEL_TOKEN}", metrics: "${PORT}" },
+    });
+    expect(m.tunnel).toMatchObject({ kind: "cloudflared", token: "${TUNNEL_TOKEN}", config: null });
+    expect(m.tunnel?.metrics).toBe("${PORT}");
+    const frpc = parseManifest({ ...minimal, tunnel: { kind: "frpc", config: "conf/frpc.toml" } });
+    expect(frpc.tunnel?.config).toBe("conf/frpc.toml");
+    const frps = { kind: "frps", port: "${PORT}", token: "${TUNNEL_TOKEN}", http_port: 8080 };
+    expect(parseManifest({ ...minimal, settings, tunnel: frps }).tunnel?.http_port).toBe("8080");
+    expect(() =>
+      parseManifest({ ...minimal, tunnel: { kind: "cloudflared", token: "x" } }),
+    ).toThrow("token");
+    expect(() => parseManifest({ ...minimal, tunnel: { kind: "frpc" } })).toThrow(
+      "configuration file",
+    );
+    expect(() =>
+      parseManifest({ ...minimal, tunnel: { kind: "frpc", config: "../x.toml" } }),
+    ).toThrow("invalid path");
+    expect(() => parseManifest({ ...minimal, tunnel: { kind: "frps", port: "${NOPE}" } })).toThrow(
+      "unknown setting NOPE",
+    );
+    expect(() => parseManifest({ ...minimal, tunnel: { kind: "ngrok" } })).toThrow("tunnel.kind");
   });
 
   it("normalizes settings", () => {

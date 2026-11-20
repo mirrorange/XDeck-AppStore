@@ -184,3 +184,45 @@ new settings. Settings an update adds are asked for (or take their defaults); va
 existing settings stay.
 
 Pin a SHA-256 for every download. Write scripts for bash 3.2 (macOS) and PowerShell 5.1.
+
+## Tunnels
+
+An app with a `tunnel` section is a tunnel connector or an frp server XDeck manages
+(Remote access in XDeck). Templates may use `${KEY}`:
+
+```yaml
+tunnel:
+  kind: cloudflared # cloudflared | frpc | frps
+  token: ${TUNNEL_TOKEN} # cloudflared: exactly the setting holding the tunnel token
+  metrics: ${METRICS_PORT} # cloudflared: metrics on 127.0.0.1 (connection status)
+```
+
+```yaml
+tunnel:
+  kind: frpc
+  config: conf/frpc.toml # the configuration file XDeck writes (relative to the installation)
+```
+
+```yaml
+tunnel:
+  kind: frps
+  port: ${BIND_PORT} # what clients connect to
+  token: ${TOKEN}
+  http_port: ${VHOST_HTTP_PORT}
+  https_port: ${VHOST_HTTPS_PORT}
+  subdomain_host: ${SUBDOMAIN_HOST}
+  dashboard_port: ${DASHBOARD_PORT} # XDeck reads clients and proxies on 127.0.0.1
+  dashboard_user: ${DASHBOARD_USER}
+  dashboard_password: ${DASHBOARD_PASSWORD}
+```
+
+- **cloudflared.** XDeck installs the app with the token of the tunnel it created (or one
+  pasted from the Cloudflare dashboard) and changes the token through the app's settings.
+  Start the connector with the token from the setting (Docker: `TUNNEL_TOKEN`; process:
+  a file written by configure, `--token-file`) and metrics on `127.0.0.1:<metrics>`.
+- **frpc.** XDeck owns the configuration file: it writes the server, the token, an admin
+  API on `127.0.0.1` (for the proxies' status) and the published services, then restarts
+  the app. Ship a placeholder that keeps retrying (`loginFailExit = false`) as an extra
+  file. With Docker, mount the file's directory, not the file: XDeck replaces it.
+- Connectors reach local services as this machine does: Docker deployments use
+  `network_mode: host`.

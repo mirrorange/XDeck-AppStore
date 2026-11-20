@@ -1,0 +1,48 @@
+services:
+  frps:
+    image: fatedier/frps:v0.72.0
+    restart: unless-stopped
+    # Clients' ports are opened on this machine as they connect.
+    network_mode: host
+    entrypoint: [/bin/sh, -c]
+    # The configuration is written from the settings at every start.
+    command:
+      - |
+        set -e
+        q() { printf '"%s"' "$$(printf '%s' "$$1" | sed 's/\\/\\\\/g; s/"/\\"/g')"; }
+        {
+          echo "bindPort = $$BIND_PORT"
+          echo 'auth.method = "token"'
+          echo "auth.token = $$(q "$$TOKEN")"
+          echo "vhostHTTPPort = $$VHOST_HTTP_PORT"
+          echo "vhostHTTPSPort = $$VHOST_HTTPS_PORT"
+          if [ -n "$$SUBDOMAIN_HOST" ]; then echo "subDomainHost = $$(q "$$SUBDOMAIN_HOST")"; fi
+          if [ -n "$$ALLOW_PORTS" ]; then
+            r=""
+            for p in $$(echo "$$ALLOW_PORTS" | tr ',' ' '); do
+              case "$$p" in
+                *-*) e="{ start = $${p%-*}, end = $${p#*-} }" ;;
+                *) e="{ single = $$p }" ;;
+              esac
+              r="$${r:+$$r, }$$e"
+            done
+            echo "allowPorts = [$$r]"
+          fi
+          echo "webServer.addr = $$(q "$$DASHBOARD_BIND")"
+          echo "webServer.port = $$DASHBOARD_PORT"
+          echo "webServer.user = $$(q "$$DASHBOARD_USER")"
+          echo "webServer.password = $$(q "$$DASHBOARD_PASSWORD")"
+          echo 'log.to = "console"'
+        } > /tmp/frps.toml
+        exec /usr/bin/frps -c /tmp/frps.toml
+    environment:
+      BIND_PORT: ${BIND_PORT:-7000}
+      TOKEN: ${TOKEN:?a token is required}
+      VHOST_HTTP_PORT: ${VHOST_HTTP_PORT:-8080}
+      VHOST_HTTPS_PORT: ${VHOST_HTTPS_PORT:-8443}
+      SUBDOMAIN_HOST: ${SUBDOMAIN_HOST:-}
+      ALLOW_PORTS: ${ALLOW_PORTS:-}
+      DASHBOARD_PORT: ${DASHBOARD_PORT:-7500}
+      DASHBOARD_BIND: ${DASHBOARD_BIND:-127.0.0.1}
+      DASHBOARD_USER: ${DASHBOARD_USER:-admin}
+      DASHBOARD_PASSWORD: ${DASHBOARD_PASSWORD:?a dashboard password is required}

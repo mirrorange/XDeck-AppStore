@@ -1,0 +1,49 @@
+id: frpc
+name: frp client
+version: "0.72.0"
+summary:
+  en: frp client that publishes websites and ports of this machine through an frp server.
+  zh: frp 客户端，通过 frp 服务端将本机的网站和端口发布到公网。
+description:
+  en: |-
+    Connects to an frp server with a public address (yours, for example the frp server
+    app on a VPS) and publishes websites of this machine by domain name and TCP or UDP
+    ports on the server's ports, also behind NAT or a firewall. XDeck writes its
+    configuration: set the server and the published services up under Remote access.
+    The Docker deployment uses the host network; the process deployment downloads the
+    official build.
+  zh: |-
+    连接到具有公网地址的 frp 服务端（例如部署在 VPS 上的 frp 服务端应用），按域名发布本机网站，
+    或通过服务端端口发布 TCP、UDP 端口，即使位于 NAT 或防火墙之后。配置由 XDeck 写入：
+    在「远程访问」中设置服务端和要发布的服务。Docker 部署使用主机网络；进程守护部署会下载
+    官方版本。
+icon: icon.svg
+categories: [network, tunnel]
+homepage: https://github.com/fatedier/frp
+license: Apache-2.0
+
+settings: []
+
+# XDeck writes the configuration of installations of this app (conf/frpc.toml).
+tunnel:
+  kind: frpc
+  config: conf/frpc.toml
+
+docker:
+  compose: docker/compose.yaml
+  files:
+    - { source: shared/frpc.toml, target: conf/frpc.toml }
+
+process:
+  unix:
+    install: process/install.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/frp.sh, process/checksums.txt]
+  windows:
+    install: process/install.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1, process/frp.ps1, process/checksums.txt]
+  files:
+    - { source: shared/frpc.toml, target: conf/frpc.toml }

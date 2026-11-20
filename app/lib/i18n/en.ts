@@ -34,6 +34,8 @@ const en = {
     sql: "SQL",
     nosql: "NoSQL",
     proxy: "Proxy",
+    network: "Networking",
+    tunnel: "Tunnels",
   },
   methods: { docker: "Docker", process: "Process" },
   platforms: { linux: "Linux", macos: "macOS", windows: "Windows" },

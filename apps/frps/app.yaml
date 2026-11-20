@@ -1,0 +1,116 @@
+id: frps
+name: frp server
+version: "0.72.0"
+summary:
+  en: frp server on a public machine that frp clients publish their websites and ports through.
+  zh: 部署在公网机器上的 frp 服务端，frp 客户端通过它发布网站和端口。
+description:
+  en: |-
+    Install it on a machine with a public address. frp clients (the frp client app,
+    managed under Remote access in another XDeck) connect to it with the token and
+    publish websites on its HTTP and HTTPS ports by domain name, and TCP or UDP
+    ports on its own ports. XDeck shows the connection details to copy and the
+    clients and proxies that are connected. The Docker deployment uses the host
+    network; the process deployment downloads the official build.
+  zh: |-
+    安装在具有公网地址的机器上。frp 客户端（frp 客户端应用，可在另一台 XDeck 的「远程访问」
+    中管理）使用令牌连接到它，按域名通过其 HTTP、HTTPS 端口发布网站，或通过其端口发布 TCP、
+    UDP 端口。XDeck 会显示可复制的连接信息以及已连接的客户端与代理。Docker 部署使用主机
+    网络；进程守护部署会下载官方版本。
+icon: icon.svg
+categories: [network, tunnel]
+homepage: https://github.com/fatedier/frp
+license: Apache-2.0
+
+settings:
+  - key: BIND_PORT
+    type: port
+    default: 7000
+    label: { en: Port for clients, zh: 客户端连接端口 }
+  - key: TOKEN
+    type: password
+    required: true
+    generate: true
+    label: { en: Token, zh: 令牌 }
+    description:
+      en: Clients authenticate with it.
+      zh: 客户端使用它进行认证。
+  - key: VHOST_HTTP_PORT
+    type: port
+    default: 8080
+    label: { en: HTTP port for websites, zh: 网站 HTTP 端口 }
+    description:
+      en: 80 when no other web server runs on this machine.
+      zh: 本机没有其他 Web 服务器时可使用 80。
+  - key: VHOST_HTTPS_PORT
+    type: port
+    default: 8443
+    label: { en: HTTPS port for websites, zh: 网站 HTTPS 端口 }
+  - key: SUBDOMAIN_HOST
+    type: string
+    default: ""
+    label: { en: Domain for subdomains, zh: 子域名所属域名 }
+    description:
+      en: With frp.example.com, clients can publish app.frp.example.com (point *.frp.example.com here).
+      zh: 设为 frp.example.com 时，客户端可发布 app.frp.example.com（需将 *.frp.example.com 解析到本机）。
+  - key: ALLOW_PORTS
+    type: string
+    default: "10000-20000"
+    label: { en: Ports for clients, zh: 允许客户端使用的端口 }
+    description:
+      en: Ranges and ports for TCP and UDP, such as 10000-20000,30000. Empty allows every port.
+      zh: TCP 与 UDP 可使用的端口范围或端口，例如 10000-20000,30000；留空表示不限制。
+  - key: DASHBOARD_PORT
+    type: port
+    default: 7500
+    label: { en: Dashboard port, zh: 管理面板端口 }
+  - key: DASHBOARD_BIND
+    type: select
+    default: 127.0.0.1
+    label: { en: Dashboard address, zh: 管理面板监听地址 }
+    options:
+      - { value: 127.0.0.1, label: { en: This machine only, zh: 仅本机 } }
+      - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }
+  - key: DASHBOARD_USER
+    type: string
+    default: admin
+    required: true
+    label: { en: Dashboard user, zh: 管理面板用户名 }
+  - key: DASHBOARD_PASSWORD
+    type: password
+    required: true
+    generate: true
+    label: { en: Dashboard password, zh: 管理面板密码 }
+
+# XDeck shows the connection details and the clients of installations of this app.
+tunnel:
+  kind: frps
+  port: ${BIND_PORT}
+  token: ${TOKEN}
+  http_port: ${VHOST_HTTP_PORT}
+  https_port: ${VHOST_HTTPS_PORT}
+  subdomain_host: ${SUBDOMAIN_HOST}
+  dashboard_port: ${DASHBOARD_PORT}
+  dashboard_user: ${DASHBOARD_USER}
+  dashboard_password: ${DASHBOARD_PASSWORD}
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/frp.sh, process/checksums.txt]
+  windows:
+    install: process/install.ps1
+    configure: process/configure.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1, process/frp.ps1, process/checksums.txt]
+  health_check:
+    type: tcp
+    host: 127.0.0.1
+    port: ${BIND_PORT}

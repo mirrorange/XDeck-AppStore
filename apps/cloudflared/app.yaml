@@ -1,0 +1,75 @@
+id: cloudflared
+name: Cloudflared
+version: "2026.11.1"
+summary:
+  en: Cloudflare Tunnel connector that publishes local services without opening ports.
+  zh: Cloudflare Tunnel 连接器，无需开放端口即可将本地服务发布到公网。
+description:
+  en: |-
+    Runs a Cloudflare Tunnel: an outbound connection to Cloudflare through which
+    websites and ports of this machine are reached under your domains, also behind
+    NAT or a firewall. Create the tunnel under Remote access in XDeck (XDeck installs
+    this app and keeps its public hostnames and DNS records), or paste the token of a
+    tunnel created in the Cloudflare dashboard. The Docker deployment uses the host
+    network; the process deployment downloads the official build.
+  zh: |-
+    运行 Cloudflare Tunnel：本机主动连接到 Cloudflare，通过你的域名访问本机的网站和端口，
+    即使位于 NAT 或防火墙之后。可在 XDeck「远程访问」中创建隧道（XDeck 会安装本应用并管理
+    公网主机名与 DNS 记录），也可粘贴在 Cloudflare 控制台创建的隧道令牌。Docker 部署使用
+    主机网络；进程守护部署会下载官方版本。
+icon: icon.svg
+categories: [network, tunnel]
+homepage: https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/
+license: Apache-2.0
+
+settings:
+  - key: TUNNEL_TOKEN
+    type: password
+    required: true
+    label: { en: Tunnel token, zh: 隧道令牌 }
+    description:
+      en: From Remote access in XDeck, or the tunnel's page in the Cloudflare dashboard.
+      zh: 来自 XDeck「远程访问」，或 Cloudflare 控制台中该隧道的页面。
+  - key: PROTOCOL
+    type: select
+    default: auto
+    label: { en: Protocol, zh: 协议 }
+    options:
+      - { value: auto, label: { en: Automatic, zh: 自动 } }
+      - { value: quic, label: { en: QUIC, zh: QUIC } }
+      - { value: http2, label: { en: HTTP/2 (where UDP is blocked), zh: HTTP/2（UDP 受限时） } }
+  - key: METRICS_PORT
+    type: port
+    default: 20241
+    label: { en: Metrics port, zh: 指标端口 }
+    description:
+      en: On 127.0.0.1; XDeck reads the connection status from it.
+      zh: 监听 127.0.0.1；XDeck 从中读取连接状态。
+
+# XDeck manages tunnels run by installations of this app.
+tunnel:
+  kind: cloudflared
+  token: ${TUNNEL_TOKEN}
+  metrics: ${METRICS_PORT}
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/cloudflared.sh]
+  windows:
+    install: process/install.ps1
+    configure: process/configure.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1, process/cloudflared.ps1]
+  health_check:
+    type: tcp
+    host: 127.0.0.1
+    port: ${METRICS_PORT}
+    grace_ms: 30000

@@ -1,0 +1,5 @@
+# XDeck writes this file: set the tunnel up under Remote access.
+serverAddr = "127.0.0.1"
+serverPort = 7000
+loginFailExit = false
+log.to = "console"

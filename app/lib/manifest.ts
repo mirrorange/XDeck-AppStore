@@ -81,6 +81,40 @@ export interface DatabaseIntegration {
   tools: string | null;
 }
 
+export type TunnelKind = "cloudflared" | "frpc" | "frps";
+export const TUNNEL_KINDS: readonly TunnelKind[] = ["cloudflared", "frpc", "frps"];
+
+/** How XDeck manages a tunnel connector or an frp server; templates may use `${KEY}`. */
+export interface TunnelIntegration {
+  kind: TunnelKind;
+  /** cloudflared: exactly `${KEY}` of the token setting; frps: the clients' token. */
+  token: string | null;
+  /** frpc: the configuration file XDeck writes, relative to the installation. */
+  config: string | null;
+  /** cloudflared: the metrics port on 127.0.0.1. */
+  metrics: string | null;
+  /** frps: the port clients connect to, the HTTP(S) ports for websites. */
+  port: string | null;
+  http_port: string | null;
+  https_port: string | null;
+  subdomain_host: string | null;
+  dashboard_port: string | null;
+  dashboard_user: string | null;
+  dashboard_password: string | null;
+}
+
+export const TUNNEL_TEMPLATES = [
+  "token",
+  "metrics",
+  "port",
+  "http_port",
+  "https_port",
+  "subdomain_host",
+  "dashboard_port",
+  "dashboard_user",
+  "dashboard_password",
+] as const;
+
 export interface HealthCheck {
   type: "tcp" | "http";
   host: string | null;
@@ -112,6 +146,8 @@ export interface Manifest {
   nginx: { service: string } | null;
   /** XDeck manages the databases and users of installations of this app. */
   database: DatabaseIntegration | null;
+  /** A tunnel connector (cloudflared, frpc) or an frp server XDeck manages. */
+  tunnel: TunnelIntegration | null;
 }
 
 export interface RepoMeta {
@@ -328,6 +364,7 @@ export function parseManifest(raw: unknown): Manifest {
   const process = raw.process;
   const nginx = raw.nginx;
   const database = raw.database;
+  const tunnel = raw.tunnel;
   const m: Manifest = {
     id: scalar(raw.id, "id"),
     name: scalar(raw.name, "name"),
@@ -383,6 +420,18 @@ export function parseManifest(raw: unknown): Manifest {
               tools: optionalString(database.tools, "database.tools"),
             }
           : fail("database: expected a map"),
+    tunnel:
+      tunnel === undefined || tunnel === null
+        ? null
+        : isObject(tunnel)
+          ? {
+              kind: oneOf(tunnel.kind, TUNNEL_KINDS, "tunnel.kind"),
+              config: optionalString(tunnel.config, "tunnel.config"),
+              ...(Object.fromEntries(
+                TUNNEL_TEMPLATES.map((k) => [k, optionalScalar(tunnel[k], `tunnel.${k}`)]),
+              ) as Record<(typeof TUNNEL_TEMPLATES)[number], string | null>),
+            }
+          : fail("tunnel: expected a map"),
   };
   validate(m);
   return m;
@@ -408,6 +457,22 @@ function checkTargets(list: FileDef[]) {
     if (seen.has(f.target)) fail(`duplicate target ${f.target}`);
     seen.add(f.target);
   }
+}
+
+function checkTunnel(t: TunnelIntegration, keys: Set<string>) {
+  for (const k of TUNNEL_TEMPLATES) {
+    for (const key of references(t[k] ?? "")) {
+      if (!keys.has(key)) fail(`the tunnel integration uses an unknown setting ${key}`);
+    }
+  }
+  if (t.kind === "cloudflared" && !/^\$\{[A-Z_][A-Z0-9_]*\}$/.test(t.token ?? "")) {
+    fail("cloudflared integrations need token: ${KEY} of the token setting");
+  }
+  if (t.kind === "frpc") {
+    if (!t.config) fail("frpc integrations need the configuration file");
+    checkRelativePath(t.config);
+  }
+  if (t.kind === "frps" && (!t.port || !t.token)) fail("frps integrations need a port and a token");
 }
 
 export function validate(m: Manifest): void {
@@ -448,6 +513,7 @@ export function validate(m: Manifest): void {
       }
     }
   }
+  if (m.tunnel) checkTunnel(m.tunnel, keys);
   if (m.icon && !iconType(m.icon)) fail(`icon ${m.icon} must be .svg, .png or .webp`);
   if (m.docker) checkTargets(m.docker.files);
   if (m.process) {

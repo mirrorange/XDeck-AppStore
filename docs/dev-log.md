@@ -143,3 +143,25 @@ servers' own tools (XDeck ADR 066).
 
 **Verification.** `pnpm check`, `pnpm build`; `test/e2e/run.ts` passes for MySQL, MariaDB
 and PostgreSQL with both methods, and still for MongoDB (Docker) and Redis (process).
+
+## 2026-11-20 · Tunnels: Cloudflared, frp server and frp client
+
+**Goal.** Connectors and the frp server for XDeck's remote access (ADR 011).
+
+**Done**
+
+- Manifest mirror: the `tunnel` section (`cloudflared`, `frpc`, `frps`; templates over
+  settings, cloudflared's token a single `${KEY}`, frpc's configuration a relative path).
+- Cloudflared 2026.11.1: Docker (host network, token, protocol and metrics from `.env`)
+  and process (official builds for Linux and macOS x86-64 / ARM64 and Windows x86-64; the
+  token in `conf/token`, `--token-file`).
+- frp server 0.72.0: Docker (host network, configuration written from the environment at
+  start) and process (official builds; `frps verify`); token, ports for websites,
+  subdomain host, allowed ports, dashboard.
+- frp client 0.72.0: Docker (host network, `conf/` mounted) and process; the configuration
+  is XDeck's.
+- Categories `network` and `tunnel` on the site; README, authoring guide.
+
+**Verification.** `pnpm check`, `pnpm build`; the frps configure script and the Docker
+start script produce configurations `frps verify` accepts and frps starts with;
+cloudflared 2026.11.1 accepts `--protocol`, `--metrics` and `run --token-file`.
