@@ -114,7 +114,7 @@ too. MariaDB has no Windows process deployment.
 ## 011 · Tunnel connectors and the frp server are XDeck integrations
 
 **Context.** XDeck publishes websites and ports of a machine without a public address
-through Cloudflare Tunnel or a self-hosted frp server (XDeck ADRs 076–078). It installs and
+through Cloudflare Tunnel or a self-hosted frp server (XDeck ADRs 077–079). It installs and
 configures the connectors itself, and needs to know where an installation keeps its token
 or configuration.
 **Decision.** Cloudflared, the frp client and the frp server declare a `tunnel` section.
