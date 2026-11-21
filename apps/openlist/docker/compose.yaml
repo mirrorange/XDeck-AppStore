@@ -1,0 +1,23 @@
+services:
+  openlist:
+    image: openlistteam/openlist:v4.2.10
+    restart: unless-stopped
+    # Root in the container, so the bind-mounted data/ is writable.
+    user: "0:0"
+    ports:
+      - ${BIND:-0.0.0.0}:${PORT:-5244}:5244
+    entrypoint: [/bin/sh, -c]
+    # The administrator's password is set from the settings at every start.
+    command:
+      - |
+        set -e
+        OPENLIST_ADMIN_PASSWORD="$$ADMIN_PASSWORD" ./openlist admin set "$$ADMIN_PASSWORD" > /dev/null 2> /tmp/admin.log ||
+          { cat /tmp/admin.log >&2; exit 1; }
+        ./openlist admin 2> /dev/null | grep -q "username: admin" ||
+          { cat /tmp/admin.log >&2; echo "error: could not set the administrator's password" >&2; exit 1; }
+        unset ADMIN_PASSWORD
+        exec ./openlist server --no-prefix --log-std
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?an administrator password is required}
+    volumes:
+      - ./data:/opt/openlist/data
