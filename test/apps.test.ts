@@ -7,7 +7,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
-import { methodsOf, referencedFiles, type LocalizedText } from "~/lib/manifest";
+import { methodsOf, referencedFiles, references, type LocalizedText } from "~/lib/manifest";
 import { loadRepo } from "../scripts/repo";
 import { outdated, sharedCopies } from "../scripts/sync-shared";
 
@@ -56,8 +56,11 @@ describe.each(repo.apps.map((a) => [a.manifest.id, a] as const))("%s", (id, { di
   it("keeps data inside the app directory", () => {
     if (!manifest.docker) return;
     const compose = parse(readFileSync(join(dir, manifest.docker.compose), "utf8"));
+    // rclone's mount folder is a host directory by design.
+    const mountRoot = references(manifest.storage?.mount_root ?? "")[0];
     for (const [name, service] of Object.entries<Record<string, unknown>>(compose.services)) {
       for (const v of (service.volumes as string[] | undefined) ?? []) {
+        if (mountRoot && v.startsWith(`\${${mountRoot}`)) continue;
         expect(v, `${name} volume`).toMatch(/^\.\//);
       }
     }

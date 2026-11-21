@@ -1,0 +1,73 @@
+id: rclone
+name: rclone
+version: "1.76.0"
+summary:
+  en: Mounts cloud storage on this machine as local folders.
+  zh: 将云存储挂载为本机文件夹。
+description:
+  en: |-
+    Connects to S3, WebDAV, SFTP, Google Drive, OneDrive, Dropbox and dozens of other
+    storage providers and mounts them as folders of this machine. XDeck manages its
+    remotes and mounts. Mounting needs FUSE (fuse3 on Linux, macFUSE or FUSE-T on macOS,
+    WinFsp on Windows).
+  zh: |-
+    连接 S3、WebDAV、SFTP、Google Drive、OneDrive、Dropbox 等数十种存储服务，并将其挂载为本机文件夹。
+    远程存储与挂载由 XDeck 管理。挂载需要 FUSE（Linux 上为 fuse3，macOS 上为 macFUSE 或 FUSE-T，
+    Windows 上为 WinFsp）。
+icon: icon.svg
+categories: [storage]
+homepage: https://rclone.org
+license: MIT
+
+settings:
+  - key: RC_PORT
+    type: port
+    default: 5572
+    label: { en: Remote control port, zh: 远程控制端口 }
+    description:
+      en: On 127.0.0.1; XDeck manages rclone through it.
+      zh: 监听 127.0.0.1；XDeck 通过它管理 rclone。
+  - key: RC_PASSWORD
+    type: password
+    required: true
+    generate: true
+    label: { en: Remote control password, zh: 远程控制密码 }
+  - key: MOUNT_ROOT
+    type: string
+    default: /mnt/rclone
+    required: true
+    methods: [docker]
+    label: { en: Mount folder, zh: 挂载目录 }
+    description:
+      en: Mount points are created inside it.
+      zh: 挂载点位于此目录内。
+
+# XDeck manages the remotes and mounts of installations of this app (Storage in XDeck).
+storage:
+  kind: rclone
+  rc: ${RC_PORT}
+  user: xdeck
+  password: ${RC_PASSWORD}
+  config: conf/rclone.conf
+  mount_root: ${MOUNT_ROOT}
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/rclone.sh, process/checksums.txt]
+  windows:
+    install: process/install.ps1
+    configure: process/configure.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1, process/rclone.ps1, process/checksums.txt]
+  health_check:
+    type: tcp
+    host: 127.0.0.1
+    port: ${RC_PORT}

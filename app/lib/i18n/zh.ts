@@ -38,6 +38,7 @@ const zh: Translation = {
     proxy: "代理",
     network: "网络",
     tunnel: "隧道",
+    storage: "存储",
   },
   methods: { docker: "Docker", process: "进程守护" },
   platforms: { linux: "Linux", macos: "macOS", windows: "Windows" },

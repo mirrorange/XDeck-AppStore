@@ -1,0 +1,25 @@
+services:
+  rclone:
+    image: rclone/rclone:1.76.0
+    restart: unless-stopped
+    # The remote control listens on 127.0.0.1 of this machine.
+    network_mode: host
+    command:
+      - rcd
+      - --rc-addr=127.0.0.1:${RC_PORT:-5572}
+      - --config=/config/rclone/rclone.conf
+      - --cache-dir=/cache
+    environment:
+      RCLONE_RC_USER: xdeck
+      RCLONE_RC_PASS: ${RC_PASSWORD:?a password is required}
+    # FUSE mounts, visible on the host below the mount folder.
+    devices:
+      - /dev/fuse
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - ./conf:/config/rclone
+      - ./cache:/cache
+      - ${MOUNT_ROOT:-/mnt/rclone}:${MOUNT_ROOT:-/mnt/rclone}:rshared
