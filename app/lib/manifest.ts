@@ -127,6 +127,7 @@ export interface StorageIntegration {
   port: string | null;
   /** The login of the RC API (rclone) or the administrator (openlist). */
   user: string | null;
+  /** OpenList: exactly `${KEY}` of the password setting. */
   password: string | null;
   /** rclone: its configuration file, relative to the installation. */
   config: string | null;
@@ -517,11 +518,15 @@ function checkStorage(s: StorageIntegration, keys: Set<string>) {
       if (!keys.has(key)) fail(`the storage integration uses an unknown setting ${key}`);
     }
   }
-  if (s.kind === "rclone") {
-    if (!s.rc || !s.config) fail("rclone integrations need the rc port and the configuration file");
-    checkRelativePath(s.config);
+  if (s.config !== null) checkRelativePath(s.config);
+  if (s.kind === "rclone" && !s.rc) fail("rclone integrations need the remote control port");
+  if (s.kind === "openlist") {
+    if (!s.port) fail("OpenList integrations need the port");
+    // XDeck changes the administrator's password through that setting.
+    if (!/^\$\{[A-Z_][A-Z0-9_]*\}$/.test(s.password ?? "")) {
+      fail("OpenList integrations need password: ${KEY} of the password setting");
+    }
   }
-  if (s.kind === "openlist" && !s.port) fail("openlist integrations need a port");
 }
 
 export function validate(m: Manifest): void {

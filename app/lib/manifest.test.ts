@@ -130,18 +130,27 @@ describe("parseManifest", () => {
       ...rclone,
       port: null,
     });
-    const openlist = parseManifest({ ...minimal, storage: { kind: "openlist", port: 5244 } });
+    expect(
+      parseManifest({ ...minimal, storage: { kind: "rclone", rc: 5572 } }).storage?.config,
+    ).toBeNull();
+    const ol = { kind: "openlist", port: 5244, user: "admin", password: "${RC_PASSWORD}" };
+    const openlist = parseManifest({ ...minimal, settings, storage: ol });
     expect(openlist.storage).toMatchObject({ kind: "openlist", port: "5244", config: null });
-    expect(() =>
-      parseManifest({ ...minimal, storage: { kind: "rclone", config: "conf/rclone.conf" } }),
-    ).toThrow("rc port");
+    expect(() => parseManifest({ ...minimal, storage: { kind: "rclone" } })).toThrow(
+      "remote control port",
+    );
     expect(() =>
       parseManifest({ ...minimal, storage: { kind: "rclone", rc: 5572, config: "/etc/rclone" } }),
     ).toThrow("invalid path");
     expect(() =>
-      parseManifest({ ...minimal, storage: { kind: "openlist", port: "${NOPE}" } }),
+      parseManifest({ ...minimal, settings, storage: { ...ol, port: "${NOPE}" } }),
     ).toThrow("unknown setting NOPE");
-    expect(() => parseManifest({ ...minimal, storage: { kind: "openlist" } })).toThrow("a port");
+    expect(() =>
+      parseManifest({ ...minimal, settings, storage: { ...ol, port: undefined } }),
+    ).toThrow("the port");
+    expect(() =>
+      parseManifest({ ...minimal, settings, storage: { ...ol, password: "secret" } }),
+    ).toThrow("${KEY}");
     expect(() => parseManifest({ ...minimal, storage: { kind: "s3" } })).toThrow("storage.kind");
   });
 

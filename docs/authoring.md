@@ -238,7 +238,7 @@ storage:
   rc: ${RC_PORT} # the remote control on 127.0.0.1
   user: xdeck # its login
   password: ${RC_PASSWORD}
-  config: conf/rclone.conf # relative to the installation
+  config: conf/rclone.conf # optional, relative to the installation
   mount_root: ${MOUNT_ROOT} # Docker: mount points must be inside (empty for processes)
 ```
 
@@ -247,7 +247,7 @@ storage:
   kind: openlist
   port: ${PORT} # the web interface and WebDAV (/dav) on 127.0.0.1
   user: admin
-  password: ${ADMIN_PASSWORD}
+  password: ${ADMIN_PASSWORD} # exactly ${KEY}: XDeck changes the password through it
 ```
 
 - **rclone.** Start `rclone rcd` on `127.0.0.1:<rc>` with the login (`RCLONE_RC_USER`,
