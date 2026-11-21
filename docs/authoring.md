@@ -226,3 +226,42 @@ tunnel:
   file. With Docker, mount the file's directory, not the file: XDeck replaces it.
 - Connectors reach local services as this machine does: Docker deployments use
   `network_mode: host`.
+
+## Storage
+
+An app with a `storage` section is rclone or OpenList, managed under Storage in XDeck.
+Templates may use `${KEY}`:
+
+```yaml
+storage:
+  kind: rclone
+  rc: ${RC_PORT} # the remote control on 127.0.0.1
+  user: xdeck # its login
+  password: ${RC_PASSWORD}
+  config: conf/rclone.conf # relative to the installation
+  mount_root: ${MOUNT_ROOT} # Docker: mount points must be inside (empty for processes)
+```
+
+```yaml
+storage:
+  kind: openlist
+  port: ${PORT} # the web interface and WebDAV (/dav) on 127.0.0.1
+  user: admin
+  password: ${ADMIN_PASSWORD}
+```
+
+- **rclone.** Start `rclone rcd` on `127.0.0.1:<rc>` with the login (`RCLONE_RC_USER`,
+  `RCLONE_RC_PASS` in the environment, not on the command line), `--config` and
+  `--cache-dir` in the installation, and nothing to serve. XDeck creates remotes and
+  mounts through the remote control and never edits the configuration file. Mounts need
+  FUSE (fuse3, macFUSE or FUSE-T, WinFsp); install neither requires nor installs it, and
+  XDeck reports when it is missing. With Docker, the container gets `/dev/fuse`,
+  `SYS_ADMIN` and no AppArmor profile, and the mount folder is bind-mounted at the same
+  path with `rshared` propagation, so mounts made in the container appear on the host. The
+  folder's mount must be shared (systemd systems share `/`), and XDeck creates the mount
+  points.
+- **OpenList.** The administrator password is a setting that is not `install_only`:
+  configure (Docker: every start) sets it with `openlist admin set`. OpenList 4.2 creates no
+  administrator on its own (a setup wizard does), so the first run passes the password in
+  `OPENLIST_ADMIN_PASSWORD` too. The command prints the password: discard its output.
+  Configure changes only the listen address and port in `data/config.json`.

@@ -165,3 +165,35 @@ and PostgreSQL with both methods, and still for MongoDB (Docker) and Redis (proc
 **Verification.** `pnpm check`, `pnpm build`; the frps configure script and the Docker
 start script produce configurations `frps verify` accepts and frps starts with;
 cloudflared 2026.11.1 accepts `--protocol`, `--metrics` and `run --token-file`.
+
+## 2026-11-21 · Storage: rclone and OpenList
+
+**Goal.** The apps behind XDeck's storage (ADR 012).
+
+**Done**
+
+- Manifest mirror: the `storage` section (`rclone`, `openlist`; templates over settings,
+  rclone's configuration a relative path).
+- rclone 1.76.0: Docker (host network, `/dev/fuse`, `SYS_ADMIN`, mount folder with
+  `rshared` propagation) and process (official builds for Linux, macOS and Windows, x86-64
+  and ARM64); remote control only, password from the environment.
+- OpenList 4.2.10: Docker (password set at every start) and process (official builds);
+  administrator password, port and listen address.
+- Category `storage` on the site; the data-mount check allows rclone's mount folder;
+  README, authoring guide.
+
+**Verification.** `pnpm check`, `pnpm build`. Linux x86-64, as root: rclone as a process
+and with Docker answers the remote control only with the password, creates a remote
+through it and FUSE-mounts it (Docker: visible on the host under the mount folder, gone
+when the container stops). OpenList as a process and with Docker: the administrator logs
+in to WebDAV with passwords containing quotes, `$`, backslashes and spaces; changing the
+password and port applies; `/ping` answers. The Windows configure and start scripts ran
+under PowerShell 7 on Linux against the Linux binaries.
+
+**Findings**
+
+- OpenList 4.2 creates the administrator only through its setup wizard or
+  `OPENLIST_ADMIN_PASSWORD`; `openlist admin set` exits 0 even when there is none, so the
+  scripts check `openlist admin`.
+- rclone does not create mount points; Docker refuses `rshared` on a folder whose mount
+  is private.
