@@ -22,4 +22,5 @@ services:
     volumes:
       - ./conf:/config/rclone
       - ./cache:/cache
-      - ${MOUNT_ROOT:-/mnt/rclone}:${MOUNT_ROOT:-/mnt/rclone}:rshared
+      # Without a default: XDeck reads short volumes before interpolation.
+      - ${MOUNT_ROOT}:${MOUNT_ROOT}:rshared
