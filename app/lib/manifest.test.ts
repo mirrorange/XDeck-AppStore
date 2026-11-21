@@ -27,6 +27,7 @@ describe("parseManifest", () => {
       nginx: null,
       database: null,
       tunnel: null,
+      storage: null,
     });
   });
 
@@ -109,6 +110,39 @@ describe("parseManifest", () => {
       "unknown setting NOPE",
     );
     expect(() => parseManifest({ ...minimal, tunnel: { kind: "ngrok" } })).toThrow("tunnel.kind");
+  });
+
+  it("reads the storage integration", () => {
+    const settings = [
+      { key: "RC_PORT", type: "port" },
+      { key: "RC_PASSWORD", type: "password" },
+      { key: "MOUNT_ROOT", type: "string" },
+    ];
+    const rclone = {
+      kind: "rclone",
+      rc: "${RC_PORT}",
+      user: "xdeck",
+      password: "${RC_PASSWORD}",
+      config: "conf/rclone.conf",
+      mount_root: "${MOUNT_ROOT}",
+    };
+    expect(parseManifest({ ...minimal, settings, storage: rclone }).storage).toEqual({
+      ...rclone,
+      port: null,
+    });
+    const openlist = parseManifest({ ...minimal, storage: { kind: "openlist", port: 5244 } });
+    expect(openlist.storage).toMatchObject({ kind: "openlist", port: "5244", config: null });
+    expect(() =>
+      parseManifest({ ...minimal, storage: { kind: "rclone", config: "conf/rclone.conf" } }),
+    ).toThrow("rc port");
+    expect(() =>
+      parseManifest({ ...minimal, storage: { kind: "rclone", rc: 5572, config: "/etc/rclone" } }),
+    ).toThrow("invalid path");
+    expect(() =>
+      parseManifest({ ...minimal, storage: { kind: "openlist", port: "${NOPE}" } }),
+    ).toThrow("unknown setting NOPE");
+    expect(() => parseManifest({ ...minimal, storage: { kind: "openlist" } })).toThrow("a port");
+    expect(() => parseManifest({ ...minimal, storage: { kind: "s3" } })).toThrow("storage.kind");
   });
 
   it("normalizes settings", () => {

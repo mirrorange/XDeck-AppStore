@@ -115,6 +115,27 @@ export const TUNNEL_TEMPLATES = [
   "dashboard_password",
 ] as const;
 
+export type StorageKind = "rclone" | "openlist";
+export const STORAGE_KINDS: readonly StorageKind[] = ["rclone", "openlist"];
+
+/** How XDeck drives a storage app; templates may use `${KEY}`. */
+export interface StorageIntegration {
+  kind: StorageKind;
+  /** rclone: the remote control port on 127.0.0.1. */
+  rc: string | null;
+  /** openlist: the web port on 127.0.0.1. */
+  port: string | null;
+  /** The login of the RC API (rclone) or the administrator (openlist). */
+  user: string | null;
+  password: string | null;
+  /** rclone: its configuration file, relative to the installation. */
+  config: string | null;
+  /** rclone with Docker: host directory mount points must be inside. */
+  mount_root: string | null;
+}
+
+export const STORAGE_TEMPLATES = ["rc", "port", "user", "password", "mount_root"] as const;
+
 export interface HealthCheck {
   type: "tcp" | "http";
   host: string | null;
@@ -148,6 +169,8 @@ export interface Manifest {
   database: DatabaseIntegration | null;
   /** A tunnel connector (cloudflared, frpc) or an frp server XDeck manages. */
   tunnel: TunnelIntegration | null;
+  /** rclone or OpenList, managed under Storage in XDeck. */
+  storage: StorageIntegration | null;
 }
 
 export interface RepoMeta {
@@ -365,6 +388,7 @@ export function parseManifest(raw: unknown): Manifest {
   const nginx = raw.nginx;
   const database = raw.database;
   const tunnel = raw.tunnel;
+  const storage = raw.storage;
   const m: Manifest = {
     id: scalar(raw.id, "id"),
     name: scalar(raw.name, "name"),
@@ -432,6 +456,18 @@ export function parseManifest(raw: unknown): Manifest {
               ) as Record<(typeof TUNNEL_TEMPLATES)[number], string | null>),
             }
           : fail("tunnel: expected a map"),
+    storage:
+      storage === undefined || storage === null
+        ? null
+        : isObject(storage)
+          ? {
+              kind: oneOf(storage.kind, STORAGE_KINDS, "storage.kind"),
+              config: optionalString(storage.config, "storage.config"),
+              ...(Object.fromEntries(
+                STORAGE_TEMPLATES.map((k) => [k, optionalScalar(storage[k], `storage.${k}`)]),
+              ) as Record<(typeof STORAGE_TEMPLATES)[number], string | null>),
+            }
+          : fail("storage: expected a map"),
   };
   validate(m);
   return m;
@@ -475,6 +511,19 @@ function checkTunnel(t: TunnelIntegration, keys: Set<string>) {
   if (t.kind === "frps" && (!t.port || !t.token)) fail("frps integrations need a port and a token");
 }
 
+function checkStorage(s: StorageIntegration, keys: Set<string>) {
+  for (const k of STORAGE_TEMPLATES) {
+    for (const key of references(s[k] ?? "")) {
+      if (!keys.has(key)) fail(`the storage integration uses an unknown setting ${key}`);
+    }
+  }
+  if (s.kind === "rclone") {
+    if (!s.rc || !s.config) fail("rclone integrations need the rc port and the configuration file");
+    checkRelativePath(s.config);
+  }
+  if (s.kind === "openlist" && !s.port) fail("openlist integrations need a port");
+}
+
 export function validate(m: Manifest): void {
   if (!isValidId(m.id)) fail(`invalid app id ${JSON.stringify(m.id)}`);
   if (!m.name.trim() || !m.version.trim()) fail("name and version are required");
@@ -514,6 +563,7 @@ export function validate(m: Manifest): void {
     }
   }
   if (m.tunnel) checkTunnel(m.tunnel, keys);
+  if (m.storage) checkStorage(m.storage, keys);
   if (m.icon && !iconType(m.icon)) fail(`icon ${m.icon} must be .svg, .png or .webp`);
   if (m.docker) checkTargets(m.docker.files);
   if (m.process) {
