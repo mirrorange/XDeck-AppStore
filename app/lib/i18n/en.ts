@@ -36,6 +36,7 @@ const en = {
     proxy: "Proxy",
     network: "Networking",
     tunnel: "Tunnels",
+    storage: "Storage",
   },
   methods: { docker: "Docker", process: "Process" },
   platforms: { linux: "Linux", macos: "macOS", windows: "Windows" },
