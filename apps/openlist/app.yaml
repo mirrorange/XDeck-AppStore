@@ -1,0 +1,68 @@
+id: openlist
+name: OpenList
+version: "4.2.10"
+summary:
+  en: File list and WebDAV server for local folders and dozens of cloud drives.
+  zh: 支持本地目录与数十种网盘的文件列表与 WebDAV 服务。
+description:
+  en: |-
+    Browse, share and stream files of local folders and cloud drives (Aliyun Drive, 115,
+    Baidu Netdisk, OneDrive, Google Drive, S3 and many more) in one web interface, and
+    reach them over WebDAV. XDeck sets the administrator's password, publishes the web
+    interface as a website and mounts OpenList through rclone.
+  zh: |-
+    在同一个 Web 界面中浏览、分享和播放本地目录与网盘（阿里云盘、115、百度网盘、OneDrive、Google Drive、
+    S3 等）中的文件，并通过 WebDAV 访问。XDeck 可设置管理员密码、将 Web 界面发布为网站，并通过 rclone
+    挂载 OpenList。
+icon: icon.svg
+categories: [storage, web]
+homepage: https://github.com/OpenListTeam/OpenList
+license: AGPL-3.0
+
+settings:
+  - key: PORT
+    type: port
+    default: 5244
+    label: { en: Port, zh: 端口 }
+  - key: BIND
+    type: select
+    default: 0.0.0.0
+    label: { en: Listen address, zh: 监听地址 }
+    options:
+      - { value: 0.0.0.0, label: { en: All interfaces, zh: 所有网络接口 } }
+      - { value: 127.0.0.1, label: { en: This machine only, zh: 仅本机 } }
+  - key: ADMIN_PASSWORD
+    type: password
+    required: true
+    generate: true
+    label: { en: Administrator password, zh: 管理员密码 }
+    description:
+      en: For the user admin.
+      zh: 用户 admin 的密码。
+
+# XDeck manages installations of this app under Storage (the administrator, websites, rclone).
+storage:
+  kind: openlist
+  port: ${PORT}
+  user: admin
+  password: ${ADMIN_PASSWORD}
+
+docker:
+  compose: docker/compose.yaml
+
+process:
+  unix:
+    install: process/install.sh
+    configure: process/configure.sh
+    start: process/start.sh
+    uninstall: process/uninstall.sh
+    lib: [process/lib.sh, process/openlist.sh, process/checksums.txt]
+  windows:
+    install: process/install.ps1
+    configure: process/configure.ps1
+    start: process/start.ps1
+    uninstall: process/uninstall.ps1
+    lib: [process/lib.ps1, process/openlist.ps1, process/checksums.txt]
+  health_check:
+    type: http
+    url: http://127.0.0.1:${PORT}/ping
