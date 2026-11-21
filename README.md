@@ -15,12 +15,16 @@ you browse the apps in a browser.
 | Cloudflared | `cloudflare/cloudflared:2026.11.1` | official build on all three (Windows x86-64)      |
 | frp server  | `fatedier/frps:v0.72.0`            | official build on all three                       |
 | frp client  | `fatedier/frpc:v0.72.0`            | official build on all three                       |
+| rclone      | `rclone/rclone:1.76.0`             | official build on all three                       |
+| OpenList    | `openlistteam/openlist:v4.2.10`    | official build on all three                       |
 
 The database servers declare how XDeck connects to them, so their databases and users are
 managed under **Databases** in XDeck. Cloudflared and the frp client are tunnel connectors
 XDeck manages under **Remote access** (it installs them for a tunnel, keeps the token or
 writes the configuration); XDeck shows the connection details and clients of an frp
-server. Data stays under the XDeck data directory: Docker apps bind-mount `./data` inside their
+server. rclone and OpenList are managed under **Storage**: XDeck creates rclone's remotes and
+mounts through its remote control, sets OpenList's administrator password, publishes it as
+a website and mounts it through rclone. Data stays under the XDeck data directory: Docker apps bind-mount `./data` inside their
 Compose project, process apps keep everything in `<data_dir>/apps/<name>/`.
 
 ## Layout

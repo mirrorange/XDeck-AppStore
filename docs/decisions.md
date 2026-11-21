@@ -130,3 +130,21 @@ with pinned SHA-256 (cloudflared 2026.11.1, frp 0.72.0).
 **Consequences.** A connector reaches local services at the addresses this machine uses.
 On Docker Desktop and other engines in a virtual machine the host network is the VM's, so
 the process deployment is the one to use there. Cloudflared has no Windows ARM build.
+
+## 012 · rclone and OpenList are storage integrations
+
+**Context.** XDeck mounts cloud storage with rclone, manages its remotes and mounts, and
+manages OpenList installations (administrator, website, mounting it through rclone). It
+needs to reach rclone's remote control and OpenList's administrator.
+**Decision.** Both declare a `storage` section. rclone runs only the remote control
+(`rclone rcd`, no web GUI) on `127.0.0.1` with a generated password, its configuration in
+`conf/rclone.conf` and the VFS cache in `cache/`; XDeck owns the remotes and mounts
+through the RC API. The Docker deployment uses the host network, FUSE and a mount folder
+(`/mnt/rclone`) shared with the host. OpenList's administrator password is a regular
+setting that configure applies; `PORT` and `BIND` follow ADR 007, with all interfaces by
+default like other web interfaces. Both download the official builds with pinned SHA-256
+(rclone 1.76.0, OpenList 4.2.10).
+**Consequences.** Changing OpenList's password in its own web interface is undone by the
+next configure (Docker: the next start); XDeck is where it changes. Docker mounts need a
+Linux Docker Engine with `/dev/fuse` and a shared mount; on Docker Desktop, use the
+process deployment. Mounts end when rclone stops; XDeck mounts them again.
